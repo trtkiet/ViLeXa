@@ -1,0 +1,19 @@
+services:
+  # The Python Backend
+  # backend:
+  #   build: ./backend
+  #   ports:
+  #     - "8000:8000"
+  #   volumes:
+  #     - ./backend:/app  # This allows "Hot Reload" (updates without restarting)
+
+  # The React Frontend
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app      # Syncs your code changes
+      - /app/node_modules    # Prevents local node_modules from breaking the container
+    # depends_on:
+    #   - backend
