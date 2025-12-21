@@ -1,21 +1,20 @@
 services:
   # The Python Backend
-  # backend:
-  #   build: ./backend
-  #   ports:
-  #     - "8000:8000"
-  #   volumes:
-  #     - ./backend:/app  # This allows "Hot Reload" (updates without restarting)
-
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/backend  # This allows "Hot Reload" (updates without restarting)
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}  # Passes the Gemini API key from your host environment
   # The React Frontend
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: DOCKERFILE
+    build: ./frontend
     ports:
       - "5173:5173"
     volumes:
       - ./frontend:/app      # Syncs your code changes
       - /app/node_modules    # Prevents local node_modules from breaking the container
-    # depends_on:
-    #   - backend
+    depends_on:
+      - backend
