@@ -1,6 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Panel, Badge, Input, PrimaryButton, Button } from '../components/ui';
-import type { Message, LawSource } from '../types/index';
+import type { ChatApiResponse, Message, LawSource } from '../types/index';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000';
+const CHAT_ENDPOINT = `${API_BASE_URL}/api/v1/chat`;
 
 export const ChatPage: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
@@ -29,16 +32,21 @@ export const ChatPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('YOUR_BACKEND_URL/chat', {
+      const response = await fetch(CHAT_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: userMessage.text }),
       });
 
-      const data = await response.json();
-      
-      setMessages(prev => [...prev, { role: 'ai', text: data.answer }]);
-      setSources(data.sources || []);
+      if (!response.ok) {
+        throw new Error(`Request failed: ${response.status}`);
+      }
+
+      const data = (await response.json()) as ChatApiResponse;
+      const reply = data.reply ?? data.answer ?? 'Hiện không có phản hồi.';
+
+      setMessages(prev => [...prev, { role: 'ai', text: reply }]);
+      setSources(data.sources ?? []);
     } catch (error) {
       setMessages(prev => [...prev, { role: 'ai', text: 'Lỗi kết nối máy chủ.' }]);
     } finally {

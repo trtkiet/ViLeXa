@@ -18,3 +18,10 @@ export interface LawDocument {
   snippet: string;
   content?: string; // Full text for the preview
 }
+
+// API response for the chat endpoint
+export interface ChatApiResponse {
+  reply?: string;
+  answer?: string; // backward compatibility if backend changes
+  sources?: LawSource[];
+}
