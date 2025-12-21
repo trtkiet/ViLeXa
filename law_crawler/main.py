@@ -1,15 +1,42 @@
 import os
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from urllib.parse import urljoin
+
 import requests
 from bs4 import BeautifulSoup
-from urllib.parse import urljoin
-import time
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
 from config import BASE_URL, START_URL, DOWNLOAD_FOLDER, ID_LISTS
+
+MAX_WORKERS = int(os.environ.get("CRAWLER_MAX_WORKERS", "8"))
+REQUEST_TIMEOUT = float(os.environ.get("CRAWLER_REQUEST_TIMEOUT", "15"))
 
 
 # Create download folder if it doesn't exist
 if not os.path.exists(DOWNLOAD_FOLDER):
     os.makedirs(DOWNLOAD_FOLDER)
-    
+
+
+def build_session():
+    retry_strategy = Retry(
+        total=3,
+        backoff_factor=0.5,
+        status_forcelist=[429, 500, 502, 503, 504],
+        allowed_methods=["HEAD", "GET", "OPTIONS"],
+    )
+    adapter = HTTPAdapter(
+        pool_connections=MAX_WORKERS * 2,
+        pool_maxsize=MAX_WORKERS * 2,
+        max_retries=retry_strategy,
+    )
+    session = requests.Session()
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
+    session.headers.update({"User-Agent": "vbpl-crawler/1.0"})
+    return session
+
 def check_expired(soup):
     doc_info = soup.find("div", class_="vbInfo")
     # Check if "Còn hiệu lực" is in the validity_div text
@@ -17,41 +44,41 @@ def check_expired(soup):
         return False
     return True
 
-def crawl_document(url, output_folder):
+def crawl_document(session, url, output_folder):
     Id = url.split("ID=")[-1]
-    
+
     filename = f"{Id}.json"
     filepath = os.path.join(output_folder, filename)
     if os.path.exists(filepath):
         print(f"Document {filename} already exists. Skipping download.")
         return
-    
-    soup = BeautifulSoup(requests.get(url).content, "html.parser")
-    
+
+    try:
+        response = session.get(url, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        print(f"Failed to fetch {url}: {exc}")
+        return
+
+    soup = BeautifulSoup(response.content, "html.parser")
+
     if soup.find("div", class_="toanvancontent") is None:
         print(f"No content found for URL: {url}")
-        return 
-    
+        return
+
     if check_expired(soup):
         print(f"Document at {url} is expired. Skipping download.")
         return
-    
-    
-    
+
     content_div = soup.find("div", class_="toanvancontent")
-    # From paragraphs inside content_div, extract text
     paragraphs = content_div.find_all("p")
     content = "\n".join(p.text.strip() for p in paragraphs)
 
-    json_data = {
-        "Id": Id,
-        "Content": content
-    }
+    json_data = {"Id": Id, "Content": content}
     with open(filepath, "w", encoding="utf-8") as f:
         import json
+
         json.dump(json_data, f, ensure_ascii=False, indent=4)
-    
-    
 
 def get_page_number(soup):
     """
@@ -68,8 +95,15 @@ def get_page_number(soup):
     # print(f"Last page number: {last_page_number}")
     return last_page_number
 
-def crawl_vbpl(url):
-    soup = BeautifulSoup(requests.get(url).content, "html.parser")
+def crawl_vbpl(session, url):
+    try:
+        response = session.get(url, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        print(f"Failed to fetch {url}: {exc}")
+        return
+
+    soup = BeautifulSoup(response.content, "html.parser")
     max_page = get_page_number(soup)
     law_type = soup.find("a", class_="selected").text.strip()
     print(f"Crawling documents of type: {law_type}")
@@ -84,9 +118,21 @@ def crawl_vbpl(url):
     while current_page <= max_page:
         print(f"Crawling page {current_page} of {max_page}")
         page_url = f"{url}&Page={current_page}"
-        page_soup = BeautifulSoup(requests.get(page_url).content, "html.parser")
+        try:
+            page_response = session.get(page_url, timeout=REQUEST_TIMEOUT)
+            page_response.raise_for_status()
+        except requests.RequestException as exc:
+            print(f"Failed to fetch {page_url}: {exc}")
+            current_page += 1
+            continue
+
+        page_soup = BeautifulSoup(page_response.content, "html.parser")
         
         listLaw = page_soup.find("ul", class_="listLaw")
+        if not listLaw:
+            print(f"No document list found on {page_url}")
+            current_page += 1
+            continue
         doc_titles = listLaw.find_all("p", class_="title")
         document_links = []
         for doc_title in doc_titles:
@@ -96,20 +142,28 @@ def crawl_vbpl(url):
         
         # document_links = page_soup.find_all("a", class_="document-link")
         
-        for link in document_links:
-            print(link["href"])
-            doc_url = urljoin(BASE_URL, link['href'])
-            print(f"Downloading document from {doc_url}")
-            crawl_document(doc_url, os.path.join(DOWNLOAD_FOLDER, law_type_str))
+        doc_urls = [urljoin(BASE_URL, link['href']) for link in document_links if link.get('href')]
+
+        with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+            futures = [
+                executor.submit(
+                    crawl_document, session, doc_url, os.path.join(DOWNLOAD_FOLDER, law_type_str)
+                )
+                for doc_url in doc_urls
+            ]
+
+            for future in as_completed(futures):
+                future.result()
         
         current_page += 1
         time.sleep(1)  # Be polite and avoid overwhelming the server
 
 def main():
+    session = build_session()
     for id_loai_van_ban in ID_LISTS:
         url = START_URL.replace("idInput", str(id_loai_van_ban))
         print(f"Crawling documents for idLoaiVanBan={id_loai_van_ban} from {url}")
-        crawl_vbpl(url)
+        crawl_vbpl(session, url)
         time.sleep(2)  # Be polite and avoid overwhelming the server
 
 if __name__ == "__main__":
