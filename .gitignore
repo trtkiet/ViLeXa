@@ -7,6 +7,8 @@ build/
 dist/
 wheels/
 *.egg-info/
+law_crawler/vbpl_documents/
+qdrant_data/
 
 # Virtual environment
 .venv

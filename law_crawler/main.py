@@ -10,8 +10,8 @@ from urllib3.util.retry import Retry
 
 from config import BASE_URL, START_URL, DOWNLOAD_FOLDER, ID_LISTS
 
-MAX_WORKERS = int(os.environ.get("CRAWLER_MAX_WORKERS", "8"))
-REQUEST_TIMEOUT = float(os.environ.get("CRAWLER_REQUEST_TIMEOUT", "15"))
+MAX_WORKERS = int(os.environ.get("CRAWLER_MAX_WORKERS", "10"))
+REQUEST_TIMEOUT = float(os.environ.get("CRAWLER_REQUEST_TIMEOUT", "30"))
 
 
 # Create download folder if it doesn't exist
@@ -37,20 +37,17 @@ def build_session():
     session.headers.update({"User-Agent": "vbpl-crawler/1.0"})
     return session
 
-def check_expired(soup):
-    doc_info = soup.find("div", class_="vbInfo")
-    # Check if "Còn hiệu lực" is in the validity_div text
-    if doc_info and ("Còn hiệu lực" in doc_info.text or "Hết hiệu lực một phần" in doc_info.text):
-        return False
-    return True
-
-def crawl_document(session, url, output_folder):
+def crawl_document(session, url, doc_name, expired, output_folder):
     Id = url.split("ID=")[-1]
 
-    filename = f"{Id}.json"
+    filename = f"{Id}_{doc_name}.json"
     filepath = os.path.join(output_folder, filename)
     if os.path.exists(filepath):
-        print(f"Document {filename} already exists. Skipping download.")
+        # print(f"Document {filename} already exists. Skipping download.")
+        return
+
+    if expired:
+        print(f"Document at {url} is expired. Skipping download.")
         return
 
     try:
@@ -59,15 +56,11 @@ def crawl_document(session, url, output_folder):
     except requests.RequestException as exc:
         print(f"Failed to fetch {url}: {exc}")
         return
-
+    
     soup = BeautifulSoup(response.content, "html.parser")
 
     if soup.find("div", class_="toanvancontent") is None:
         print(f"No content found for URL: {url}")
-        return
-
-    if check_expired(soup):
-        print(f"Document at {url} is expired. Skipping download.")
         return
 
     content_div = soup.find("div", class_="toanvancontent")
@@ -79,6 +72,7 @@ def crawl_document(session, url, output_folder):
         import json
 
         json.dump(json_data, f, ensure_ascii=False, indent=4)
+    # print(f"Downloaded: {filename}")
 
 def get_page_number(soup):
     """
@@ -87,13 +81,41 @@ def get_page_number(soup):
     paging = soup.find("div", class_="paging")
     
     if not paging:
-        # print("No pagination found.")
         return 1  # Assume only one page if no pagination is found
     
     last_page_link = paging.find_all("a")[-1]['href']
     last_page_number = int(last_page_link.split("Page=")[-1])
-    # print(f"Last page number: {last_page_number}")
     return last_page_number
+
+def process_page(session, page_url, output_folder, doc_executor):
+    try:
+        page_response = session.get(page_url, timeout=REQUEST_TIMEOUT)
+        page_response.raise_for_status()
+    except requests.RequestException as exc:
+        print(f"Failed to fetch {page_url}: {exc}")
+        return
+
+    page_soup = BeautifulSoup(page_response.content, "html.parser")
+    
+    listLaw = page_soup.find("ul", class_="listLaw")
+    if not listLaw:
+        print(f"No document list found on {page_url}")
+        return
+    
+    doc_titles = listLaw.find_all("p", class_="title")
+    document_links = []
+    for doc_title in doc_titles:
+        document_links.extend(doc_title.find_all("a"))
+    
+    right_sides =  listLaw.find_all("div", class_="right")
+    labels = [(div.find("p", class_="red") is not None and div.find("p", class_="red").text == "Trạng thái:Hết hiệu lực toàn bộ") for div in right_sides]
+    doc_names = [link.text.strip().replace("/", "_") for link in document_links if link.get('href')]
+    doc_urls = [urljoin(BASE_URL, link['href']) for link in document_links if link.get('href')]
+    
+    for doc_url, doc_name, expired in zip(doc_urls, doc_names, labels):
+        doc_executor.submit(
+            crawl_document, session, doc_url, doc_name, expired, output_folder
+        )
 
 def crawl_vbpl(session, url):
     try:
@@ -106,57 +128,38 @@ def crawl_vbpl(session, url):
     soup = BeautifulSoup(response.content, "html.parser")
     max_page = get_page_number(soup)
     law_type = soup.find("a", class_="selected").text.strip()
-    print(f"Crawling documents of type: {law_type}")
+    print(f"Crawling documents of type: {law_type} (Total pages: {max_page})")
     law_type_str = law_type.split(":")[1].strip().split(".")[0].strip().replace(" ", "_")
     print(f"Saving documents to folder: {law_type_str}")
     
-    if not os.path.exists(os.path.join(DOWNLOAD_FOLDER, law_type_str)):
-        os.makedirs(os.path.join(DOWNLOAD_FOLDER, law_type_str))
+    output_folder = os.path.join(DOWNLOAD_FOLDER, law_type_str)
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
     
-    current_page = 1
+    # Executor for processing pages (fetching list of docs)
+    page_executor = ThreadPoolExecutor(max_workers=5)
     
-    while current_page <= max_page:
-        print(f"Crawling page {current_page} of {max_page}")
+    # Executor for downloading documents
+    doc_executor = ThreadPoolExecutor(max_workers=MAX_WORKERS)
+    
+    page_futures = []
+    print(f"Processing {max_page} pages in parallel...")
+    for current_page in range(1, max_page + 1):
         page_url = f"{url}&Page={current_page}"
-        try:
-            page_response = session.get(page_url, timeout=REQUEST_TIMEOUT)
-            page_response.raise_for_status()
-        except requests.RequestException as exc:
-            print(f"Failed to fetch {page_url}: {exc}")
-            current_page += 1
-            continue
-
-        page_soup = BeautifulSoup(page_response.content, "html.parser")
+        page_futures.append(
+            page_executor.submit(process_page, session, page_url, output_folder, doc_executor)
+        )
+    
+    # Wait for all pages to be processed
+    for future in as_completed(page_futures):
+        future.result()
         
-        listLaw = page_soup.find("ul", class_="listLaw")
-        if not listLaw:
-            print(f"No document list found on {page_url}")
-            current_page += 1
-            continue
-        doc_titles = listLaw.find_all("p", class_="title")
-        document_links = []
-        for doc_title in doc_titles:
-            document_links.extend(doc_title.find_all("a"))
-        
-        print()
-        
-        # document_links = page_soup.find_all("a", class_="document-link")
-        
-        doc_urls = [urljoin(BASE_URL, link['href']) for link in document_links if link.get('href')]
-
-        with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-            futures = [
-                executor.submit(
-                    crawl_document, session, doc_url, os.path.join(DOWNLOAD_FOLDER, law_type_str)
-                )
-                for doc_url in doc_urls
-            ]
-
-            for future in as_completed(futures):
-                future.result()
-        
-        current_page += 1
-        time.sleep(1)  # Be polite and avoid overwhelming the server
+    page_executor.shutdown()
+    
+    # Wait for all documents to be downloaded
+    print("Waiting for document downloads to complete...")
+    doc_executor.shutdown(wait=True)
+    print(f"Finished crawling {law_type}")
 
 def main():
     session = build_session()
@@ -168,5 +171,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
-    # get_page_number(BeautifulSoup(requests.get("https://vbpl.vn/TW/Pages/vanban.aspx?idLoaiVanBan=15&dvid=13").content, "html.parser"))
