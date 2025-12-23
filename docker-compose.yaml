@@ -8,9 +8,21 @@ services:
       - ./backend:/backend  # This allows "Hot Reload" (updates without restarting)
     environment:
       - GEMINI_API_KEY=${GEMINI_API_KEY}  # Passes the Gemini API key from your host environment
+    depends_on:
+      - qdrant
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333"
+    volumes:
+      - ./qdrant_data:/qdrant/storage
+
   # The React Frontend
   frontend:
-    build: ./frontend
+    build: 
+      context: ./frontend
+      dockerfile: DOCKERFILE
     ports:
       - "5173:5173"
     volumes:

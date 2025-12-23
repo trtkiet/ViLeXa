@@ -1,12 +1,17 @@
 export interface Message {
   role: 'user' | 'ai';
   text: string;
+  sources?: LawSource[];
 }
 
 export interface LawSource {
-  title: string;
-  ref: string;
-  snippet: string;
+  law_id: string;
+  chapter: string;
+  section: string;
+  article: string;
+  article_title: string;
+  clause: string;
+  source_text: string;
 }
 
 export interface LawDocument {
