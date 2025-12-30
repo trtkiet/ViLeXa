@@ -215,11 +215,3 @@ The embedding model is downloaded from Hugging Face on first run. Ensure you hav
 
 Increase Docker memory allocation if containers crash:
 - Docker Desktop → Settings → Resources → Memory: 4GB+
-
-## License
-
-[Add your license here]
-
-## Contributing
-
-[Add contribution guidelines here]

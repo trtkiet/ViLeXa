@@ -16,3 +16,4 @@ qdrant_data/
 
 .env
 *.ipynb
+*.rar
