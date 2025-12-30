@@ -5,7 +5,7 @@ from google import genai
 from qdrant_client import QdrantClient
 from sentence_transformers import SentenceTransformer
 
-from backend.core.config import config
+from core.config import config
 
 logger = logging.getLogger(__name__)
 
@@ -89,13 +89,13 @@ class ChatService:
 
         # Construct System Prompt
         system_prompt = f"""
-You are a Vietnamese Legal Assistant. Use the following context to answer the user's question.
-If the answer is not in the context, state that you cannot find it in the provided documents.
-Cite the Article Number (e.g., [Điều 5 - Luật Lao động]) for every claim you make.
+            You are a Vietnamese Legal Assistant. Use the following context to answer the user's question.
+            If the answer is not in the context, state that you cannot find it in the provided documents.
+            Cite the Article Number (e.g., [Điều 5 - Luật Lao động]) for every claim you make.
 
-CONTEXT:
-{context_str}
-"""
+            CONTEXT:
+            {context_str}
+        """
 
         response = self.client.models.generate_content(
             model=config.MODEL,

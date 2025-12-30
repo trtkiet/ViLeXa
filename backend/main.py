@@ -1,9 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.api.v1.chat import router as chat_router
-from backend.core.config import config
-from backend.core.logging import setup_logging
+from api.v1.chat import router as chat_router
+from core.config import config
+from core.logging import setup_logging
 
 app = FastAPI(title=config.APP_NAME)
 

@@ -3,6 +3,7 @@ import re
 import os
 import uuid
 import glob
+import torch
 from typing import List, Dict, Optional
 from dataclasses import dataclass
 
@@ -96,7 +97,7 @@ class VietnameseLawChunker:
                             "clause": clause_number,
                             "source_text": article_text
                         }
-                        x
+                        chunks.append(LawChunk(law_id=law_id, text=clause_text, metadata=metadata))
                         
         return chunks
 
@@ -115,8 +116,9 @@ class VietnameseLawChunker:
 
 class LawIngestor:
     def __init__(self, qdrant_url: str = "http://localhost:6333", collection_name: str = "laws"):
-        self.client = QdrantClient(url=qdrant_url)
+        self.client = QdrantClient(url=qdrant_url, timeout=120)
         self.collection_name = collection_name
+        self.batch_size = 50  # Smaller batches to avoid timeout
         print("Loading embedding model...")
         self.model = SentenceTransformer(
             'minhquan6203/paraphrase-vietnamese-law',
@@ -161,11 +163,19 @@ class LawIngestor:
                     **chunk.metadata
                 }
             ))
-            
-        self.client.upsert(
-            collection_name=self.collection_name,
-            points=points
-        )
+        
+        # Upsert in batches to avoid timeout
+        for i in range(0, len(points), self.batch_size):
+            batch = points[i:i + self.batch_size]
+            try:
+                self.client.upsert(
+                    collection_name=self.collection_name,
+                    points=batch
+                )
+            except Exception as e:
+                print(f"Error upserting batch {i // self.batch_size + 1}: {e}")
+                continue
+                
         print(f"Upserted {len(points)} points.")
 
 if __name__ == "__main__":

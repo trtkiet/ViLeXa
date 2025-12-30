@@ -16,7 +16,9 @@ RUN python -m pip install --no-cache-dir \
 	"fastapi[standard]" \
 	"google-genai" \
 	"httpx" \
-	"uvicorn"
+	"uvicorn"\
+	"qdrant-client" \
+	"sentence-transformers"
 
 # Copy backend source
 COPY . .
@@ -24,4 +26,4 @@ COPY . .
 EXPOSE 8000
 
 # GEMINI_API_KEY must be provided at runtime
-CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

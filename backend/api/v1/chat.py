@@ -2,8 +2,8 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from backend.models.chat import ChatRequest, ChatResponse
-from backend.services.chat_service import ChatService
+from models.chat import ChatRequest, ChatResponse
+from services.chat_service import ChatService
 
 logger = logging.getLogger(__name__)
 

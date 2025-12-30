@@ -1,6 +1,6 @@
 import { Navigate, NavLink, Route, Routes } from 'react-router-dom';
 import { ChatPage } from './pages/ChatPage';
-import { LookupPage } from './pages/LookUpPage';
+import { LookupPage } from './pages/LookupPage';
 
 export default function App() {
   return (
