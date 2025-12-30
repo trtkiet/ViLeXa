@@ -13,4 +13,6 @@ qdrant_data/
 .venv
 
 # Environment variables
+
 .env
+*.ipynb

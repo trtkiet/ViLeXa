@@ -1,7 +1,9 @@
 services:
   # The Python Backend
   backend:
-    build: ./backend
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
     ports:
       - "8000:8000"
     volumes:
@@ -22,7 +24,7 @@ services:
   frontend:
     build: 
       context: ./frontend
-      dockerfile: DOCKERFILE
+      dockerfile: Dockerfile
     ports:
       - "5173:5173"
     volumes:
