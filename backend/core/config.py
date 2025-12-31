@@ -10,6 +10,7 @@ class Config(BaseSettings):
     PROJECT_NAME: str = "vietnamese-law-api"
     GEMINI_API_KEY: str
     MODEL: str = "gemini-2.5-flash"
+    QDRANT_PORT: int = 6333
 
     
 config = Config()
