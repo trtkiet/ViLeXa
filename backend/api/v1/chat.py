@@ -11,8 +11,8 @@ router = APIRouter()
 
 
 def get_chat_service() -> ChatService:
-    chat_service = ChatService()
-    chat_service.startup()
+    """Dependency to get the shared chat service instance."""
+    from main import chat_service
     return chat_service
 
 

@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
-import type { ChatApiResponse, Message } from '../types/index';
+import { useNavigate } from 'react-router-dom';
+import type { ChatApiResponse, Message, LawSource } from '../types/index';
 import ReactMarkdown from 'react-markdown';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000';
 const CHAT_ENDPOINT = `${API_BASE_URL}/api/v1/chat`;
 
 export const ChatPage: React.FC = () => {
+  const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([
     { role: 'ai', text: 'Chào bạn, tôi là trợ lý pháp luật ảo. Tôi có thể giúp gì cho bạn hôm nay?' }
   ]);
@@ -13,6 +15,15 @@ export const ChatPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Navigate to lookup page with source information
+  const handleSourceClick = (source: LawSource) => {
+    const params = new URLSearchParams({
+      law_id: source.law_id,
+      article: source.article,
+    });
+    navigate(`/lookup?${params.toString()}`);
+  };
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -112,7 +123,11 @@ export const ChatPage: React.FC = () => {
                       <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Nguồn tham khảo</div>
                       <div className="grid grid-cols-1 gap-2">
                         {msg.sources.map((source, sIdx) => (
-                          <div key={sIdx} className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm hover:bg-slate-100 transition-colors cursor-pointer">
+                          <div 
+                            key={sIdx} 
+                            onClick={() => handleSourceClick(source)}
+                            className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm hover:bg-slate-100 transition-colors cursor-pointer"
+                          >
                             <div className="font-medium text-blue-700 flex items-center gap-2">
                               <span className="text-xs bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">
                                 {source.article}

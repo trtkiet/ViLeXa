@@ -11,6 +11,7 @@ class Config(BaseSettings):
     GEMINI_API_KEY: str
     MODEL: str = "gemini-2.5-flash"
     QDRANT_PORT: int = 6333
+    DOCS_ROOT: str = "./law_crawler/vbpl_documents"
 
     
 config = Config()
