@@ -1,24 +1,91 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Panel, Badge, Input, Button } from '../components/ui';
 import type { LawDocument, DocumentListResponse, TypesResponse } from '../types';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
+// Skeleton loading component
+const DocumentSkeleton: React.FC = () => (
+  <div className="animate-pulse space-y-3">
+    {[1, 2, 3, 4, 5].map((i) => (
+      <div key={i} className="rounded-md border border-slate-200 px-3 py-3">
+        <div className="flex items-center justify-between">
+          <div className="h-4 bg-slate-200 rounded w-3/4"></div>
+          <div className="h-5 bg-slate-200 rounded w-16"></div>
+        </div>
+        <div className="mt-2 h-3 bg-slate-200 rounded w-1/3"></div>
+        <div className="mt-2 h-3 bg-slate-200 rounded w-full"></div>
+      </div>
+    ))}
+  </div>
+);
+
+// Content skeleton
+const ContentSkeleton: React.FC = () => (
+  <div className="animate-pulse">
+    <div className="border-b pb-6 mb-6">
+      <div className="h-3 bg-slate-200 rounded w-24 mb-2"></div>
+      <div className="h-8 bg-slate-200 rounded w-3/4 mb-3"></div>
+      <div className="flex gap-2">
+        <div className="h-6 bg-slate-200 rounded w-20"></div>
+        <div className="h-6 bg-slate-200 rounded w-32"></div>
+      </div>
+    </div>
+    <div className="space-y-3">
+      {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+        <div key={i} className="h-4 bg-slate-200 rounded" style={{ width: `${Math.random() * 40 + 60}%` }}></div>
+      ))}
+    </div>
+  </div>
+);
+
+// Error message component
+const ErrorMessage: React.FC<{ message: string; onRetry?: () => void }> = ({ message, onRetry }) => (
+  <div className="flex flex-col items-center justify-center py-10 text-center">
+    <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-3">
+      <svg className="w-6 h-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      </svg>
+    </div>
+    <p className="text-slate-600 mb-3">{message}</p>
+    {onRetry && (
+      <button
+        onClick={onRetry}
+        className="px-4 py-2 text-sm bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+      >
+        Thử lại
+      </button>
+    )}
+  </div>
+);
+
 export const LookupPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<LawDocument[]>([]);
   const [selectedDoc, setSelectedDoc] = useState<LawDocument | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isListLoading, setIsListLoading] = useState(false);
+  const [isDocLoading, setIsDocLoading] = useState(false);
+  const [isTypesLoading, setIsTypesLoading] = useState(true);
   const [selectedType, setSelectedType] = useState<string | null>(null);
-  const [availableTypes, setAvailableTypes] = useState<string[]>(['Luật', 'Nghị định', 'Pháp lệnh', 'Thông tư']);
+  const [availableTypes, setAvailableTypes] = useState<string[]>([]);
   const [highlightArticle, setHighlightArticle] = useState<string | null>(null);
+  const [listError, setListError] = useState<string | null>(null);
+  const [docError, setDocError] = useState<string | null>(null);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const pageSize = 20;
+
   const contentRef = useRef<HTMLDivElement>(null);
 
   // Load available document types on mount
   useEffect(() => {
     const fetchTypes = async () => {
+      setIsTypesLoading(true);
       try {
         const response = await fetch(`${API_URL}/api/v1/documents/types`);
         if (response.ok) {
@@ -27,6 +94,8 @@ export const LookupPage: React.FC = () => {
         }
       } catch (error) {
         console.error('Failed to fetch document types:', error);
+      } finally {
+        setIsTypesLoading(false);
       }
     };
     fetchTypes();
@@ -67,34 +136,40 @@ export const LookupPage: React.FC = () => {
     }
   }, [highlightArticle, selectedDoc]);
 
-  const fetchDocumentById = async (docId: string) => {
-    setIsLoading(true);
+  const fetchDocumentById = useCallback(async (docId: string) => {
+    setIsDocLoading(true);
+    setDocError(null);
     try {
       const response = await fetch(`${API_URL}/api/v1/documents/${encodeURIComponent(docId)}`);
       if (response.ok) {
         const doc: LawDocument = await response.json();
         setSelectedDoc(doc);
         setResults([doc]);
+      } else if (response.status === 404) {
+        setDocError('Không tìm thấy văn bản này.');
       } else {
-        console.error('Document not found');
+        setDocError('Không thể tải văn bản. Vui lòng thử lại.');
       }
     } catch (error) {
       console.error('Failed to fetch document:', error);
+      setDocError('Lỗi kết nối. Vui lòng kiểm tra mạng và thử lại.');
     } finally {
-      setIsLoading(false);
+      setIsDocLoading(false);
     }
-  };
+  }, []);
 
-  const fetchDocuments = async (searchQuery?: string, docType?: string | null) => {
-    setIsLoading(true);
+  const fetchDocuments = useCallback(async (searchQuery?: string, docType?: string | null, page: number = 1) => {
+    setIsListLoading(true);
+    setListError(null);
     try {
       let url: string;
       const params = new URLSearchParams();
-      
+
       if (docType) {
         params.append('type', docType);
       }
-      params.append('page_size', '50');
+      params.append('page', page.toString());
+      params.append('page_size', pageSize.toString());
 
       if (searchQuery && searchQuery.trim()) {
         params.append('q', searchQuery.trim());
@@ -107,46 +182,81 @@ export const LookupPage: React.FC = () => {
       if (response.ok) {
         const data: DocumentListResponse = await response.json();
         setResults(data.items);
+        setCurrentPage(data.page);
+        setTotalPages(data.total_pages);
+        setTotalItems(data.total);
+
         if (data.items.length > 0 && !selectedDoc) {
           // Auto-select first result if no document is selected
           fetchFullDocument(data.items[0].id);
         }
+      } else {
+        setListError('Không thể tải danh sách văn bản.');
       }
     } catch (error) {
       console.error('Failed to fetch documents:', error);
+      setListError('Lỗi kết nối. Vui lòng kiểm tra mạng và thử lại.');
     } finally {
-      setIsLoading(false);
+      setIsListLoading(false);
     }
-  };
+  }, [selectedDoc]);
 
-  const fetchFullDocument = async (docId: string) => {
+  const fetchFullDocument = useCallback(async (docId: string) => {
+    setIsDocLoading(true);
+    setDocError(null);
     try {
       const response = await fetch(`${API_URL}/api/v1/documents/${encodeURIComponent(docId)}`);
       if (response.ok) {
         const doc: LawDocument = await response.json();
         setSelectedDoc(doc);
+      } else if (response.status === 404) {
+        setDocError('Không tìm thấy văn bản này.');
+      } else {
+        setDocError('Không thể tải nội dung văn bản.');
       }
     } catch (error) {
       console.error('Failed to fetch document:', error);
+      setDocError('Lỗi kết nối. Vui lòng thử lại.');
+    } finally {
+      setIsDocLoading(false);
     }
-  };
+  }, []);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     setHighlightArticle(null);
-    await fetchDocuments(query, selectedType);
+    setCurrentPage(1);
+    await fetchDocuments(query, selectedType, 1);
   };
 
   const handleTypeFilter = (type: string) => {
     const newType = selectedType === type ? null : type;
     setSelectedType(newType);
     setHighlightArticle(null);
-    fetchDocuments(query, newType);
+    setCurrentPage(1);
+    fetchDocuments(query, newType, 1);
   };
 
   const handleSelectDocument = (doc: LawDocument) => {
     setHighlightArticle(null);
     fetchFullDocument(doc.id);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages && newPage !== currentPage) {
+      setCurrentPage(newPage);
+      fetchDocuments(query, selectedType, newPage);
+    }
+  };
+
+  const retryFetchList = () => {
+    fetchDocuments(query, selectedType, currentPage);
+  };
+
+  const retryFetchDoc = () => {
+    if (selectedDoc?.id) {
+      fetchFullDocument(selectedDoc.id);
+    }
   };
 
   // Highlight article in content
@@ -181,36 +291,64 @@ export const LookupPage: React.FC = () => {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Tìm kiếm văn bản pháp luật..."
+              disabled={isListLoading}
             />
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? '...' : 'Search'}
+            <Button type="submit" disabled={isListLoading}>
+              {isListLoading ? (
+                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              ) : 'Tìm kiếm'}
             </Button>
           </form>
 
+          {/* Document type filters */}
           <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-600">
-            {availableTypes.slice(0, 6).map((tag) => (
-              <button
-                key={tag}
-                type="button"
-                onClick={() => handleTypeFilter(tag)}
-                className="p-0 border-0 bg-transparent"
-              >
-                <Badge
-                  className={`cursor-pointer transition ${
-                    selectedType === tag
-                      ? 'bg-slate-900 text-white'
-                      : 'hover:bg-slate-200'
-                  }`}
+            {isTypesLoading ? (
+              <div className="flex gap-2">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="h-6 w-16 bg-slate-200 rounded animate-pulse"></div>
+                ))}
+              </div>
+            ) : availableTypes.length > 0 ? (
+              availableTypes.slice(0, 8).map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => handleTypeFilter(tag)}
+                  disabled={isListLoading}
+                  className="p-0 border-0 bg-transparent disabled:opacity-50"
                 >
-                  {tag}
-                </Badge>
-              </button>
-            ))}
+                  <Badge
+                    className={`cursor-pointer transition ${
+                      selectedType === tag
+                        ? 'bg-slate-900 text-white'
+                        : 'hover:bg-slate-200'
+                    }`}
+                  >
+                    {tag}
+                  </Badge>
+                </button>
+              ))
+            ) : null}
           </div>
 
-          <div className="mt-5 space-y-3 max-h-[600px] overflow-y-auto pr-1">
-            {isLoading && results.length === 0 ? (
-              <p className="text-center text-slate-400 py-10">Đang tải...</p>
+          {/* Results count */}
+          {totalItems > 0 && !isListLoading && (
+            <div className="mt-3 text-xs text-slate-500">
+              Tìm thấy {totalItems} văn bản
+              {selectedType && <span> loại "{selectedType}"</span>}
+              {query && <span> cho "{query}"</span>}
+            </div>
+          )}
+
+          {/* Document list */}
+          <div className="mt-4 space-y-3 max-h-[500px] overflow-y-auto pr-1">
+            {listError ? (
+              <ErrorMessage message={listError} onRetry={retryFetchList} />
+            ) : isListLoading ? (
+              <DocumentSkeleton />
             ) : results.length > 0 ? (
               results.map((item) => (
                 <button
@@ -223,9 +361,9 @@ export const LookupPage: React.FC = () => {
                       : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
                   }`}
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-2">
                     <span className="font-semibold text-slate-900 line-clamp-1">{item.title}</span>
-                    <Badge>{item.type}</Badge>
+                    <Badge className="shrink-0">{item.type}</Badge>
                   </div>
                   <div className="mt-1 text-xs text-slate-600">
                     {item.ref} • {item.date}
@@ -234,32 +372,117 @@ export const LookupPage: React.FC = () => {
                 </button>
               ))
             ) : (
-              <p className="text-center text-slate-400 py-10">
-                {query ? 'Không tìm thấy văn bản.' : 'Nhập từ khóa để tìm kiếm văn bản pháp luật.'}
-              </p>
+              <div className="text-center text-slate-400 py-10">
+                <svg className="w-12 h-12 mx-auto mb-3 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <p>{query || selectedType ? 'Không tìm thấy văn bản phù hợp.' : 'Tìm kiếm hoặc chọn loại văn bản để bắt đầu.'}</p>
+              </div>
             )}
           </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && !listError && (
+            <div className="mt-4 flex items-center justify-center gap-2">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1 || isListLoading}
+                className="px-3 py-1 text-sm border rounded hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                ‹
+              </button>
+              <div className="flex items-center gap-1">
+                {/* Show first page */}
+                {currentPage > 2 && (
+                  <>
+                    <button
+                      onClick={() => handlePageChange(1)}
+                      className="px-3 py-1 text-sm border rounded hover:bg-slate-100"
+                    >
+                      1
+                    </button>
+                    {currentPage > 3 && <span className="px-1 text-slate-400">...</span>}
+                  </>
+                )}
+                {/* Show current page and neighbors */}
+                {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
+                  const page = Math.max(1, Math.min(currentPage - 1 + i, totalPages - 2 + i));
+                  if (page < 1 || page > totalPages) return null;
+                  if (currentPage > 2 && page === 1) return null;
+                  if (currentPage < totalPages - 1 && page === totalPages) return null;
+                  return (
+                    <button
+                      key={page}
+                      onClick={() => handlePageChange(page)}
+                      disabled={isListLoading}
+                      className={`px-3 py-1 text-sm border rounded ${
+                        page === currentPage
+                          ? 'bg-slate-900 text-white border-slate-900'
+                          : 'hover:bg-slate-100'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  );
+                })}
+                {/* Show last page */}
+                {currentPage < totalPages - 1 && (
+                  <>
+                    {currentPage < totalPages - 2 && <span className="px-1 text-slate-400">...</span>}
+                    <button
+                      onClick={() => handlePageChange(totalPages)}
+                      className="px-3 py-1 text-sm border rounded hover:bg-slate-100"
+                    >
+                      {totalPages}
+                    </button>
+                  </>
+                )}
+              </div>
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages || isListLoading}
+                className="px-3 py-1 text-sm border rounded hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                ›
+              </button>
+            </div>
+          )}
         </Panel>
       </div>
 
       {/* Right Content: Document Preview */}
       <Panel className="col-span-3 p-8 flex flex-col min-h-[700px]">
-        {selectedDoc ? (
+        {docError ? (
+          <ErrorMessage message={docError} onRetry={retryFetchDoc} />
+        ) : isDocLoading ? (
+          <ContentSkeleton />
+        ) : selectedDoc ? (
           <>
             <div className="flex items-start justify-between border-b pb-6 mb-6">
-              <div className="space-y-1">
+              <div className="space-y-1 flex-1 min-w-0">
                 <p className="text-xs uppercase tracking-widest text-slate-500 font-bold">
                   Văn bản pháp luật
                 </p>
                 <h2 className="text-2xl font-bold text-slate-900">{selectedDoc.title}</h2>
-                <div className="flex gap-2 mt-2">
+                <div className="flex flex-wrap gap-2 mt-2">
                   <Badge className="bg-slate-900 text-white">{selectedDoc.ref}</Badge>
                   <Badge className="border border-slate-300 bg-white text-slate-800">
                     Năm ban hành: {selectedDoc.date}
                   </Badge>
+                  {highlightArticle && (
+                    <Badge className="bg-yellow-100 text-yellow-800 border border-yellow-300">
+                      Đang xem: {highlightArticle}
+                    </Badge>
+                  )}
                 </div>
               </div>
-              <Button className="shrink-0">Tải PDF</Button>
+              <Button
+                className="shrink-0 opacity-50 cursor-not-allowed"
+                disabled
+                title="Tính năng đang phát triển"
+              >
+                Tải PDF
+              </Button>
             </div>
 
             <div
@@ -280,6 +503,9 @@ export const LookupPage: React.FC = () => {
           </>
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-slate-400">
+            <svg className="w-16 h-16 mb-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
             <p>Chọn một văn bản từ danh sách bên trái để xem chi tiết.</p>
           </div>
         )}
