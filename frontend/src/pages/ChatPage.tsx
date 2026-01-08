@@ -280,26 +280,40 @@ export const ChatPage: React.FC = () => {
           <div className="max-w-3xl mx-auto">
             <form onSubmit={handleSendMessage} className="relative flex items-center gap-2 bg-slate-100 rounded-full p-2 pl-4 border border-slate-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all shadow-sm">
               <input
-                className="flex-1 bg-transparent border-none outline-none text-slate-700 placeholder-slate-400"
+                ref={inputRef}
+                className="flex-1 bg-transparent border-none outline-none text-slate-700 placeholder-slate-400 disabled:cursor-not-allowed"
                 value={composer}
                 onChange={(e) => setComposer(e.target.value)}
-                placeholder="Hỏi bất cứ điều gì về luật pháp Việt Nam..."
+                placeholder={isLoading ? "Đang chờ phản hồi..." : "Hỏi bất cứ điều gì về luật pháp Việt Nam..."}
                 disabled={isLoading}
               />
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 disabled={isLoading || !composer.trim()}
                 className={`p-2 rounded-full transition-colors ${
-                  composer.trim() ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                  isLoading
+                    ? 'bg-blue-400 text-white cursor-wait'
+                    : composer.trim()
+                    ? 'bg-blue-600 text-white hover:bg-blue-700'
+                    : 'bg-slate-300 text-slate-500 cursor-not-allowed'
                 }`}
+                title={isLoading ? 'Đang xử lý...' : composer.trim() ? 'Gửi tin nhắn' : 'Nhập tin nhắn để gửi'}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-                  <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" />
-                </svg>
+                {isLoading ? (
+                  <LoadingSpinner />
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                    <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" />
+                  </svg>
+                )}
               </button>
             </form>
             <div className="text-center text-xs text-slate-400 mt-2">
-              AI có thể mắc lỗi. Hãy kiểm tra các thông tin quan trọng.
+              {isLoading ? (
+                <span className="text-blue-500">AI đang xử lý yêu cầu của bạn...</span>
+              ) : (
+                'AI có thể mắc lỗi. Hãy kiểm tra các thông tin quan trọng.'
+              )}
             </div>
           </div>
         </div>
