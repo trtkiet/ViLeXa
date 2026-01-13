@@ -1,30 +1,59 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import type { ChatApiResponse, Message, LawSource } from '../types/index';
+import { useNavigate, NavLink } from 'react-router-dom';
+import type { LawSource } from '../types/index';
+import type { SessionMessage } from '../types/session';
 import ReactMarkdown from 'react-markdown';
+import { Sidebar } from '../components/layout/Sidebar';
+import { useSessions, type SessionError } from '../hooks/useSessions';
+import { getAuthHeader, API_BASE_URL } from '../services/api';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000';
-const CHAT_ENDPOINT = `${API_BASE_URL}/api/v1/chat`;
+// Toast notification component
+const Toast: React.FC<{ error: SessionError; onDismiss: () => void }> = ({ error, onDismiss }) => (
+  <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4 duration-200">
+    <div className="bg-red-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 max-w-md">
+      <svg className="w-5 h-5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+      </svg>
+      <span className="text-sm">{error.message}</span>
+      <button onClick={onDismiss} className="ml-2 p-1 hover:bg-red-700 rounded transition-colors">
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+  </div>
+);
 
 // Extended Message type with error state for retry functionality
-interface ExtendedMessage extends Message {
+interface ExtendedMessage {
+  id?: number;
+  role: 'user' | 'ai';
+  text: string;
+  sources?: LawSource[];
   isError?: boolean;
   errorType?: 'network' | 'server' | 'unknown';
+}
+
+// Chat API response
+interface ChatApiResponse {
+  reply: string;
+  sources?: LawSource[];
+  session_id: string;
 }
 
 // Typing indicator component
 const TypingIndicator: React.FC = () => (
   <div className="flex gap-4 justify-start">
-    <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white shrink-0">
-      AI
+    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-xs font-medium shrink-0">
+      VA
     </div>
     <div className="flex items-center gap-1 px-4 py-3">
       <div className="flex gap-1">
-        <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-        <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-        <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
       </div>
-      <span className="ml-2 text-sm text-slate-500">Đang suy nghĩ...</span>
+      <span className="ml-2 text-sm text-gray-500">Thinking...</span>
     </div>
   </div>
 );
@@ -37,49 +66,74 @@ const LoadingSpinner: React.FC = () => (
   </svg>
 );
 
-const STORAGE_KEY = 'chat_state';
-
-const generateSessionId = () => {
-  if (typeof self !== 'undefined' && self.crypto && self.crypto.randomUUID) {
-    return self.crypto.randomUUID();
-  }
-  return Math.random().toString(36).substring(2) + Date.now().toString(36);
-};
-
-const getInitialState = () => {
-  try {
-    const saved = sessionStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      const { messages, sessionID } = JSON.parse(saved);
-      return { messages, sessionID };
-    }
-  } catch (e) {
-    console.error('Failed to load chat state:', e);
-  }
-  return {
-    messages: [{ role: 'ai', text: 'Chào bạn, tôi là trợ lý pháp luật ảo. Tôi có thể giúp gì cho bạn hôm nay?' }],
-    sessionID: generateSessionId()
-  };
-};
+// Convert session messages to extended messages
+function convertSessionMessages(messages: SessionMessage[]): ExtendedMessage[] {
+  return messages.map(msg => ({
+    id: msg.id,
+    role: msg.role,
+    text: msg.content,
+    sources: msg.sources as LawSource[],
+  }));
+}
 
 export const ChatPage: React.FC = () => {
   const navigate = useNavigate();
-  const initialState = getInitialState();
-  const [messages, setMessages] = useState<ExtendedMessage[]>(initialState.messages);
+  const {
+    sessions,
+    activeSessionId,
+    isLoading: isSessionsLoading,
+    error: sessionError,
+    fetchSessions,
+    getSession,
+    deleteSession,
+    renameSession,
+    selectSession,
+    updateSessionInList,
+    clearError: clearSessionError,
+  } = useSessions();
+
+  const [messages, setMessages] = useState<ExtendedMessage[]>([]);
   const [composer, setComposer] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null);
-  const [sessionID] = useState<string>(initialState.sessionID);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Load messages when active session changes
+  useEffect(() => {
+    const loadMessages = async () => {
+      if (!activeSessionId) {
+        setMessages([]);
+        return;
+      }
+
+      setIsLoadingMessages(true);
+      try {
+        const sessionDetail = await getSession(activeSessionId);
+        setMessages(convertSessionMessages(sessionDetail.messages));
+      } catch (error) {
+        console.error('Failed to load messages:', error);
+        setMessages([]);
+      } finally {
+        setIsLoadingMessages(false);
+      }
+    };
+
+    loadMessages();
+  }, [activeSessionId, getSession]);
 
   // Navigate to lookup page by searching source content
   const handleSourceClick = async (source: LawSource) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/documents/search-by-content`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader(),
+        },
         body: JSON.stringify({ source_text: source.source_text }),
       });
 
@@ -98,15 +152,6 @@ export const ChatPage: React.FC = () => {
     }
   };
 
-  // Save chat state to sessionStorage
-  useEffect(() => {
-    try {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ messages, sessionID }));
-    } catch (e) {
-      console.error('Failed to save chat state:', e);
-    }
-  }, [messages, sessionID]);
-
   // Auto-scroll to bottom when messages change or loading state changes
   useEffect(() => {
     if (scrollRef.current) {
@@ -121,23 +166,25 @@ export const ChatPage: React.FC = () => {
     }
   }, [isLoading]);
 
-  
-
   // Send message to API
-  const sendMessageToAPI = useCallback(async (messageText: string) => {
+  const sendMessageToAPI = useCallback(async (messageText: string, sessionId: string | null) => {
     setIsLoading(true);
     setLastFailedMessage(null);
-
-    
 
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
 
-      const response = await fetch(CHAT_ENDPOINT, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: messageText , session_id: sessionID }),
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader(),
+        },
+        body: JSON.stringify({
+          message: messageText,
+          session_id: sessionId,
+        }),
         signal: controller.signal,
       });
 
@@ -146,10 +193,12 @@ export const ChatPage: React.FC = () => {
       if (!response.ok) {
         const errorType = response.status >= 500 ? 'server' : 'unknown';
         const errorMessage = response.status === 500
-          ? 'Máy chủ đang gặp sự cố. Vui lòng thử lại sau.'
+          ? 'Server error. Please try again later.'
           : response.status === 503
-          ? 'Dịch vụ tạm thời không khả dụng. Vui lòng thử lại sau.'
-          : `Có lỗi xảy ra (mã lỗi: ${response.status}). Vui lòng thử lại.`;
+          ? 'Service temporarily unavailable. Please try again later.'
+          : response.status === 401
+          ? 'Session expired. Please login again.'
+          : `An error occurred (code: ${response.status}). Please try again.`;
 
         setLastFailedMessage(messageText);
         setMessages(prev => [...prev, {
@@ -161,21 +210,36 @@ export const ChatPage: React.FC = () => {
         return;
       }
 
-      const data = (await response.json()) as ChatApiResponse;
-      const reply = data.reply ?? data.answer ?? 'Hiện không có phản hồi từ hệ thống.';
-      const sources = data.sources ?? [];
+      const data = await response.json() as ChatApiResponse;
 
-      setMessages(prev => [...prev, { role: 'ai', text: reply, sources: sources }]);
+      // If this was a new session, select it and refresh sessions list
+      if (!sessionId && data.session_id) {
+        selectSession(data.session_id);
+        fetchSessions();
+      }
+
+      // Update session in list to move it to top
+      if (data.session_id) {
+        updateSessionInList(data.session_id, {
+          updated_at: new Date().toISOString(),
+        });
+      }
+
+      setMessages(prev => [...prev, {
+        role: 'ai',
+        text: data.reply,
+        sources: data.sources,
+      }]);
     } catch (error) {
-      let errorMessage = 'Đã xảy ra lỗi không xác định. Vui lòng thử lại.';
+      let errorMessage = 'An unknown error occurred. Please try again.';
       let errorType: 'network' | 'server' | 'unknown' = 'unknown';
 
       if (error instanceof Error) {
         if (error.name === 'AbortError') {
-          errorMessage = 'Yêu cầu đã hết thời gian chờ. Vui lòng thử lại.';
+          errorMessage = 'Request timed out. Please try again.';
           errorType = 'network';
         } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-          errorMessage = 'Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.';
+          errorMessage = 'Cannot connect to server. Please check your connection.';
           errorType = 'network';
         }
       }
@@ -190,7 +254,7 @@ export const ChatPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [selectSession, fetchSessions, updateSessionInList]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -201,14 +265,21 @@ export const ChatPage: React.FC = () => {
     setMessages(prev => [...prev, userMessage]);
     setComposer('');
 
-    await sendMessageToAPI(messageText);
+    await sendMessageToAPI(messageText, activeSessionId);
   };
 
   // Start new conversation
   const handleNewConversation = useCallback(() => {
-    sessionStorage.removeItem(STORAGE_KEY);
-    window.location.reload();
-  }, []);
+    selectSession(null);
+    setMessages([]);
+    setSidebarOpen(false);
+  }, [selectSession]);
+
+  // Select a session
+  const handleSelectSession = useCallback((sessionId: string | null) => {
+    selectSession(sessionId);
+    setSidebarOpen(false);
+  }, [selectSession]);
 
   // Retry failed message
   const handleRetry = useCallback(() => {
@@ -223,65 +294,135 @@ export const ChatPage: React.FC = () => {
       return newMessages;
     });
 
-    sendMessageToAPI(lastFailedMessage);
-  }, [lastFailedMessage, isLoading, sendMessageToAPI]);
+    sendMessageToAPI(lastFailedMessage, activeSessionId);
+  }, [lastFailedMessage, isLoading, sendMessageToAPI, activeSessionId]);
 
   return (
-    <div className="flex h-screen bg-white text-slate-800 font-sans">
+    <div className="flex h-screen bg-white text-gray-800 font-sans">
+      {/* Session error toast */}
+      {sessionError && (
+        <Toast error={sessionError} onDismiss={clearSessionError} />
+      )}
+
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/20 z-40 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <div className="w-64 bg-slate-50 border-r border-slate-200 flex flex-col hidden md:flex">
-        <div className="p-4">
-          <button
-            onClick={handleNewConversation}
-            className="flex items-center gap-2 px-4 py-3 bg-slate-200 hover:bg-slate-300 rounded-full text-sm font-medium transition-colors w-full text-slate-700"
-          >
-            <span className="text-lg">+</span> Cuộc trò chuyện mới
-          </button>
-        </div>
-        <div className="flex-1 overflow-y-auto px-2">
-          <div className="px-4 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">Gần đây</div>
-          <div className="space-y-1">
-            <button className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-200 rounded-lg truncate">
-              Luật Lao động 2019
-            </button>
-            <button className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-200 rounded-lg truncate">
-              Quy định về thử việc
-            </button>
-          </div>
-        </div>
-        <div className="p-4 border-t border-slate-200 text-xs text-slate-500">
-          Legal Assistant v0.1
-        </div>
+      <div className={`
+        fixed inset-y-0 left-0 z-50 transform transition-transform duration-200
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        md:relative md:translate-x-0
+      `}>
+        <Sidebar
+          sessions={sessions}
+          activeSessionId={activeSessionId}
+          onSelectSession={handleSelectSession}
+          onNewSession={handleNewConversation}
+          onDeleteSession={deleteSession}
+          onRenameSession={renameSession}
+          isLoading={isSessionsLoading}
+        />
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col relative">
+      <div className="flex-1 flex flex-col relative min-w-0">
         {/* Header */}
-        <div className="h-14 border-b border-slate-100 flex items-center justify-between px-6">
-          <div className="font-medium text-slate-700">Vietnamese Law Assistant</div>
-          <div className="text-sm text-slate-500">Gemini 1.5 Pro</div>
+        <div className="h-14 border-b border-gray-100 flex items-center justify-between px-4 md:px-6 shrink-0">
+          <div className="flex items-center gap-3">
+            {/* Mobile menu button */}
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="md:hidden p-1.5 -ml-1.5 hover:bg-gray-100 rounded-lg"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <div className="flex items-center gap-2">
+              <span className="bg-gray-900 text-white px-2 py-0.5 rounded text-sm font-bold">VA</span>
+              <span className="font-medium text-gray-900 hidden sm:inline">Law Assistant</span>
+            </div>
+          </div>
+          <nav className="flex items-center gap-1">
+            <NavLink
+              to="/"
+              className={({isActive}) =>
+                `px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                  isActive ? 'bg-gray-100 font-medium' : 'hover:bg-gray-50'
+                }`
+              }
+            >
+              Chat
+            </NavLink>
+            <NavLink
+              to="/lookup"
+              className={({isActive}) =>
+                `px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                  isActive ? 'bg-gray-100 font-medium' : 'hover:bg-gray-50'
+                }`
+              }
+            >
+              Lookup
+            </NavLink>
+          </nav>
         </div>
 
         {/* Messages */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 pb-32">
-          <div className="max-w-3xl mx-auto space-y-8">
-            {messages.map((msg, idx) => (
-              <div key={idx} className={`flex gap-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+        <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 pb-36">
+          <div className="max-w-3xl mx-auto space-y-6">
+            {/* Welcome message when no session selected and no messages */}
+            {!activeSessionId && messages.length === 0 && !isLoadingMessages && (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-xl font-bold mx-auto mb-4">
+                  VA
+                </div>
+                <h2 className="text-xl font-medium text-gray-900 mb-2">
+                  Vietnamese Law Assistant
+                </h2>
+                <p className="text-gray-500 max-w-md mx-auto">
+                  Ask me anything about Vietnamese law. I'll help you find relevant legal information and explain complex regulations.
+                </p>
+              </div>
+            )}
+
+            {/* Loading messages indicator */}
+            {isLoadingMessages && (
+              <div className="flex justify-center py-8">
+                <div className="flex items-center gap-2 text-gray-500">
+                  <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+                  <span className="text-sm">Loading messages...</span>
+                </div>
+              </div>
+            )}
+
+            {/* Messages */}
+            {!isLoadingMessages && messages.map((msg, idx) => (
+              <div
+                key={msg.id || idx}
+                className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-200`}
+              >
                 {msg.role === 'ai' && (
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white shrink-0 ${
-                    msg.isError ? 'bg-red-500' : 'bg-blue-600'
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-medium shrink-0 ${
+                    msg.isError
+                      ? 'bg-red-500'
+                      : 'bg-gradient-to-br from-blue-500 to-blue-600'
                   }`}>
-                    {msg.isError ? '!' : 'AI'}
+                    {msg.isError ? '!' : 'VA'}
                   </div>
                 )}
 
                 <div className={`flex flex-col max-w-[85%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                  <div className={`prose prose-slate max-w-none rounded-2xl px-5 py-3 ${
+                  <div className={`prose prose-gray prose-sm max-w-none rounded-2xl px-4 py-2.5 ${
                     msg.role === 'user'
-                      ? 'bg-slate-100 text-slate-800 rounded-br-none'
+                      ? 'bg-gray-100 text-gray-800 rounded-br-sm'
                       : msg.isError
                       ? 'bg-red-50 text-red-700 border border-red-200'
-                      : 'bg-transparent text-slate-800 px-0 py-0'
+                      : 'bg-transparent text-gray-800 px-0 py-0'
                   }`}>
                     <ReactMarkdown>{msg.text}</ReactMarkdown>
                   </div>
@@ -296,31 +437,31 @@ export const ChatPage: React.FC = () => {
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
                         <path fillRule="evenodd" d="M15.312 11.424a5.5 5.5 0 01-9.201 2.466l-.312-.311h2.433a.75.75 0 000-1.5H3.989a.75.75 0 00-.75.75v4.242a.75.75 0 001.5 0v-2.43l.31.31a7 7 0 0011.712-3.138.75.75 0 00-1.449-.39zm1.23-3.723a.75.75 0 00.219-.53V2.929a.75.75 0 00-1.5 0V5.36l-.31-.31A7 7 0 003.239 8.188a.75.75 0 101.448.389A5.5 5.5 0 0113.89 6.11l.311.31h-2.432a.75.75 0 000 1.5h4.243a.75.75 0 00.53-.219z" clipRule="evenodd" />
                       </svg>
-                      Thử lại
+                      Retry
                     </button>
                   )}
 
                   {/* Sources / Citations */}
                   {msg.sources && msg.sources.length > 0 && !msg.isError && (
                     <div className="mt-4 space-y-2 w-full">
-                      <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Nguồn tham khảo</div>
+                      <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Sources</div>
                       <div className="grid grid-cols-1 gap-2">
                         {msg.sources.map((source, sIdx) => (
                           <div
                             key={sIdx}
                             onClick={() => handleSourceClick(source)}
-                            className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm hover:bg-slate-100 transition-colors cursor-pointer"
+                            className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm hover:bg-gray-100 hover:border-gray-300 transition-colors cursor-pointer"
                           >
                             <div className="font-medium text-blue-700 flex items-center gap-2">
-                              <span className="text-xs bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">
+                              <span className="text-xs bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded font-medium">
                                 {source.article}
                               </span>
-                              {source.article_title}
+                              <span className="truncate">{source.article_title}</span>
                             </div>
-                            <div className="text-slate-600 text-xs mt-1 line-clamp-2">
+                            <div className="text-gray-600 text-xs mt-1.5 line-clamp-2">
                               {source.source_text}
                             </div>
-                            <div className="mt-1 text-[10px] text-slate-400">
+                            <div className="mt-1.5 text-[10px] text-gray-400">
                               {source.chapter}
                             </div>
                           </div>
@@ -338,28 +479,28 @@ export const ChatPage: React.FC = () => {
         </div>
 
         {/* Input Area */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white to-transparent pt-10 pb-6 px-4">
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white to-transparent pt-8 pb-4 px-4">
           <div className="max-w-3xl mx-auto">
-            <form onSubmit={handleSendMessage} className="relative flex items-center gap-2 bg-slate-100 rounded-full p-2 pl-4 border border-slate-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all shadow-sm">
+            <form onSubmit={handleSendMessage} className="relative flex items-center gap-2 bg-gray-50 rounded-2xl p-2 pl-4 border border-gray-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all shadow-sm">
               <input
                 ref={inputRef}
-                className="flex-1 bg-transparent border-none outline-none text-slate-700 placeholder-slate-400 disabled:cursor-not-allowed"
+                className="flex-1 bg-transparent border-none outline-none text-gray-700 placeholder-gray-400 disabled:cursor-not-allowed text-[15px]"
                 value={composer}
                 onChange={(e) => setComposer(e.target.value)}
-                placeholder={isLoading ? "Đang chờ phản hồi..." : "Hỏi bất cứ điều gì về luật pháp Việt Nam..."}
+                placeholder={isLoading ? "Waiting for response..." : "Ask anything about Vietnamese law..."}
                 disabled={isLoading}
               />
               <button
                 type="submit"
                 disabled={isLoading || !composer.trim()}
-                className={`p-2 rounded-full transition-colors ${
+                className={`p-2.5 rounded-xl transition-all ${
                   isLoading
                     ? 'bg-blue-400 text-white cursor-wait'
                     : composer.trim()
-                    ? 'bg-blue-600 text-white hover:bg-blue-700'
-                    : 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                    ? 'bg-gray-900 text-white hover:bg-gray-800'
+                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                 }`}
-                title={isLoading ? 'Đang xử lý...' : composer.trim() ? 'Gửi tin nhắn' : 'Nhập tin nhắn để gửi'}
+                title={isLoading ? 'Processing...' : composer.trim() ? 'Send message' : 'Type a message to send'}
               >
                 {isLoading ? (
                   <LoadingSpinner />
@@ -370,11 +511,11 @@ export const ChatPage: React.FC = () => {
                 )}
               </button>
             </form>
-            <div className="text-center text-xs text-slate-400 mt-2">
+            <div className="text-center text-xs text-gray-400 mt-2">
               {isLoading ? (
-                <span className="text-blue-500">AI đang xử lý yêu cầu của bạn...</span>
+                <span className="text-blue-500">AI is processing your request...</span>
               ) : (
-                'AI có thể mắc lỗi. Hãy kiểm tra các thông tin quan trọng.'
+                'AI may make mistakes. Please verify important information.'
               )}
             </div>
           </div>

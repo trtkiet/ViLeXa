@@ -13,10 +13,13 @@ qdrant_data/
 .venv
 
 # Environment variables
-
 .env
 *.ipynb
 *.rar
 .vs_code/
 .vscode
 data/
+
+# SQLite database
+*.db
+law.db

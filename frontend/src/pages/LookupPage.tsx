@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, NavLink } from 'react-router-dom';
 import { Panel, Badge, Input, Button } from '../components/ui';
 import type { LawDocument, DocumentListResponse, TypesResponse } from '../types';
+import { API_BASE_URL } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_URL = API_BASE_URL;
 
 // Skeleton loading component
 const DocumentSkeleton: React.FC = () => (
@@ -61,6 +63,7 @@ const ErrorMessage: React.FC<{ message: string; onRetry?: () => void }> = ({ mes
 );
 
 export const LookupPage: React.FC = () => {
+  const { user, logout } = useAuth();
   const [searchParams] = useSearchParams();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<LawDocument[]>([]);
@@ -282,8 +285,56 @@ export const LookupPage: React.FC = () => {
   };
 
   return (
-    <div className="grid grid-cols-5 gap-6">
-      {/* Left Sidebar: Search & List */}
+    <div className="h-screen flex flex-col bg-white">
+      {/* Header */}
+      <div className="h-14 border-b border-gray-100 flex items-center justify-between px-6 shrink-0">
+        <div className="flex items-center gap-2">
+          <span className="bg-gray-900 text-white px-2 py-0.5 rounded text-sm font-bold">VA</span>
+          <span className="font-medium text-gray-900">Law Assistant</span>
+        </div>
+        <div className="flex items-center gap-4">
+          <nav className="flex items-center gap-1">
+            <NavLink
+              to="/"
+              className={({isActive}) =>
+                `px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                  isActive ? 'bg-gray-100 font-medium' : 'hover:bg-gray-50'
+                }`
+              }
+            >
+              Chat
+            </NavLink>
+            <NavLink
+              to="/lookup"
+              className={({isActive}) =>
+                `px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                  isActive ? 'bg-gray-100 font-medium' : 'hover:bg-gray-50'
+                }`
+              }
+            >
+              Lookup
+            </NavLink>
+          </nav>
+          {user && (
+            <div className="flex items-center gap-2 pl-3 border-l border-gray-200">
+              <div className="w-7 h-7 rounded-full bg-gray-900 text-white flex items-center justify-center text-xs font-medium">
+                {user.username.charAt(0).toUpperCase()}
+              </div>
+              <button
+                onClick={logout}
+                className="text-sm text-gray-500 hover:text-gray-700"
+              >
+                Sign out
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 overflow-hidden p-6">
+        <div className="grid grid-cols-5 gap-6 h-full">
+          {/* Left Sidebar: Search & List */}
       <div className="col-span-2 flex flex-col gap-4">
         <Panel className="p-5">
           <form onSubmit={handleSearch} className="flex items-center gap-2">
@@ -510,6 +561,8 @@ export const LookupPage: React.FC = () => {
           </div>
         )}
       </Panel>
+        </div>
+      </div>
     </div>
   );
 };
