@@ -1,4 +1,7 @@
 import logging
+import json
+import re
+from pathlib import Path
 from typing import Optional, Dict, List, Any
 
 # LangChain Imports
@@ -26,10 +29,77 @@ class ChatService:
         self.vector_store: Optional[QdrantVectorStore] = None
         self.model: Optional[ChatGoogleGenerativeAI] = None
         self._initialized = False
-        
+        self.docs_root = Path(config.DOCS_ROOT)
+        self._law_id_cache: Dict[str, str] = {}  # article -> law_id cache
+
         # --- MEMORY SETUP ---
         # For production, replace this dict with Redis or a Database
         self.session_store: Dict[str, BaseChatMessageHistory] = {}
+
+    def _build_law_id_cache(self) -> None:
+        """Pre-build cache mapping article titles to law_ids at startup."""
+        cache_file = self.docs_root / ".law_id_cache.json"
+
+        # Try to load from cache file
+        if cache_file.exists():
+            try:
+                with open(cache_file, 'r', encoding='utf-8') as f:
+                    self._law_id_cache = json.load(f)
+                logger.info(f"Loaded law_id cache with {len(self._law_id_cache)} entries")
+                return
+            except Exception as e:
+                logger.warning(f"Failed to load law_id cache: {e}")
+
+        # Build cache from documents
+        logger.info("Building law_id cache from documents...")
+        for filepath in self.docs_root.glob("**/*.json"):
+            if filepath.name.startswith('.'):
+                continue
+            try:
+                with open(filepath, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    law_id = str(data.get('Id', ''))
+                    content = data.get('Content', '')
+                    if not law_id or not content:
+                        continue
+
+                    # Extract all article patterns like "Điều 141: Tội hiếp dâm"
+                    articles = re.findall(r'(Điều \d+[a-z]?(?::\s*[^\n]+)?)', content)
+                    for article in articles:
+                        # Normalize: "Điều 141: Tội hiếp dâm" or just "Điều 141"
+                        self._law_id_cache[article.strip()] = law_id
+            except Exception:
+                continue
+
+        logger.info(f"Built law_id cache with {len(self._law_id_cache)} entries")
+
+        # Save cache to file
+        try:
+            with open(cache_file, 'w', encoding='utf-8') as f:
+                json.dump(self._law_id_cache, f, ensure_ascii=False)
+            logger.info("Saved law_id cache to file")
+        except Exception as e:
+            logger.warning(f"Failed to save law_id cache: {e}")
+
+    def _find_law_id_by_article(self, article_title: str) -> str:
+        """Find law_id from pre-built cache."""
+        if not article_title:
+            return ''
+
+        # Direct match
+        if article_title in self._law_id_cache:
+            return self._law_id_cache[article_title]
+
+        # Try partial match (just article number)
+        match = re.match(r'(Điều \d+[a-z]?)', article_title)
+        if match:
+            article_num = match.group(1)
+            # Find any cached entry that starts with this article number
+            for key, law_id in self._law_id_cache.items():
+                if key.startswith(article_num):
+                    return law_id
+
+        return ''
 
     def startup(self) -> None:
         """Initialize the Gemini client, Qdrant, and Embedding model."""
@@ -71,6 +141,9 @@ class ChatService:
             # so the chat works (just without context)
             self.vector_store = None
 
+        # 3. Build law_id cache for citation navigation
+        self._build_law_id_cache()
+
         self._initialized = True
         logger.info("ChatService initialized")
         
@@ -97,12 +170,34 @@ class ChatService:
             try:
                 # Search for top 4 relevant chunks
                 docs = self.vector_store.similarity_search(query, k=4)
-                
+
                 # Format context for the LLM
                 context_text = "\n\n".join([d.page_content for d in docs])
-                
-                # Keep track of sources to return to the UI
-                source_documents = [d.metadata for d in docs]
+
+                # Transform metadata to match frontend LawSource interface
+                for doc in docs:
+                    meta = doc.metadata
+                    article_full = meta.get('article', '')
+                    # Extract article number (e.g., "Điều 141" from "Điều 141: Tội hiếp dâm")
+                    article_parts = article_full.split(':', 1)
+                    article_num = article_parts[0].strip() if article_parts else ''
+                    article_title = article_full
+
+                    # Try to find law_id by text search if not in metadata
+                    law_id = meta.get('law_id', '')
+                    if not law_id:
+                        law_id = self._find_law_id_by_article(article_full)
+
+                    source_documents.append({
+                        'law_id': law_id,
+                        'chapter': meta.get('chapter', ''),
+                        'section': meta.get('section', '') or '',
+                        'article': article_num,
+                        'article_title': article_title,
+                        'clause': ', '.join(meta.get('included_clauses', [])),
+                        'source_text': doc.page_content[:300] + '...' if len(doc.page_content) > 300 else doc.page_content
+                    })
+                logger.info(f"[DEBUG] Transformed sources with law_ids: {[s['law_id'] for s in source_documents]}")
             except Exception as e:
                 logger.error(f"Error retrieving from Qdrant: {e}")
                 context_text = "No context available due to database error."
