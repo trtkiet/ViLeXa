@@ -81,7 +81,7 @@ def ingest_data() -> None:
     # Prepare data for upsert
     client.create_collection(
         collection_name=collection_name,
-        vectors_config=VectorParams(size=768, distance=Distance.COSINE),
+        vectors_config=VectorParams(size=1024, distance=Distance.COSINE),
     )
 
     docs = _load_docs_from_json(config.DOCS_FILE)
