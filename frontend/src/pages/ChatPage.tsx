@@ -57,13 +57,28 @@ export const ChatPage: React.FC = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Navigate to lookup page with source information
-  const handleSourceClick = (source: LawSource) => {
-    const params = new URLSearchParams({
-      law_id: source.law_id,
-      article: source.article,
-    });
-    navigate(`/lookup?${params.toString()}`);
+  // Navigate to lookup page by searching source content
+  const handleSourceClick = async (source: LawSource) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/documents/search-by-content`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ source_text: source.source_text }),
+      });
+
+      if (response.ok) {
+        const document = await response.json();
+        const params = new URLSearchParams({
+          id: document.id,
+          article: source.article,
+        });
+        navigate(`/lookup?${params.toString()}`);
+      } else {
+        console.error('Document not found');
+      }
+    } catch (error) {
+      console.error('Error searching document:', error);
+    }
   };
 
   // Auto-scroll to bottom when messages change or loading state changes
@@ -271,7 +286,7 @@ export const ChatPage: React.FC = () => {
                               {source.source_text}
                             </div>
                             <div className="mt-1 text-[10px] text-slate-400">
-                              {source.law_id} • {source.chapter}
+                              {source.chapter}
                             </div>
                           </div>
                         ))}

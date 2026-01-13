@@ -103,12 +103,12 @@ export const LookupPage: React.FC = () => {
 
   // Handle citation navigation from ChatPage
   useEffect(() => {
-    const lawId = searchParams.get('law_id');
+    const docId = searchParams.get('id');
     const article = searchParams.get('article');
 
-    if (lawId) {
+    if (docId) {
       setHighlightArticle(article);
-      fetchDocumentById(lawId);
+      fetchDocumentById(docId);
     } else {
       // Load initial documents list
       fetchDocuments();

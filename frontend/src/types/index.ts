@@ -5,7 +5,6 @@ export interface Message {
 }
 
 export interface LawSource {
-  law_id: string;
   chapter: string;
   section: string;
   article: string;

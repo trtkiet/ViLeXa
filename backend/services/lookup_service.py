@@ -237,11 +237,16 @@ class LawDocumentService:
     def __init__(self, docs_root: Optional[str] = None):
         self.docs_root = Path(docs_root) if docs_root else Path(config.DOCS_ROOT)
         self._id_to_filepath: Dict[str, str] = {}
+        self._content_cache: List[tuple] = []  # (law_id, content) for content search
+        self._documents_cache: List[Dict] = []  # All document metadata for fast listing
+        self._types_cache: List[str] = []  # All document types
 
     def startup(self) -> None:
-        """Initialize the service: build ID mapping."""
+        """Initialize the service: build all caches."""
         logger.info("Initializing LawDocumentService...")
         self._build_id_mapping()
+        self._build_content_cache()
+        self._build_documents_cache()
         logger.info("LawDocumentService initialized successfully")
 
     def _get_cache_path(self) -> Path:
@@ -366,41 +371,59 @@ class LawDocumentService:
         except Exception:
             return []
 
+    def _build_documents_cache(self) -> None:
+        """Build cache of all document metadata for fast listing/filtering."""
+        if self._documents_cache:
+            return
+
+        logger.info("Building documents cache...")
+        types_set = set()
+
+        for filepath in self.docs_root.glob("**/*.json"):
+            if filepath.name.startswith('.'):
+                continue
+            try:
+                doc = load_law_document(str(filepath))
+                self._documents_cache.append({
+                    "id": doc.id,
+                    "title": doc.title,
+                    "type": doc.type,
+                    "ref": f"{doc.type} {doc.number}",
+                    "date": doc.date,
+                    "snippet": doc.snippet,
+                    "content_lower": doc.content.lower()  # For search
+                })
+                types_set.add(doc.type)
+            except Exception:
+                continue
+
+        # Sort by date descending
+        self._documents_cache.sort(key=lambda x: x.get('date', ''), reverse=True)
+        self._types_cache = sorted(types_set)
+
+        logger.info(f"Documents cache built: {len(self._documents_cache)} docs, {len(self._types_cache)} types")
+
     def list_documents(
         self,
         doc_type: Optional[str] = None,
         page: int = 1,
         page_size: int = 20
     ) -> Dict:
-        """List documents with optional filtering and pagination."""
-        documents = []
-
-        for filepath in self.docs_root.glob("**/*.json"):
-            try:
-                doc = load_law_document(str(filepath))
-                
-                if doc_type and doc.type != doc_type:
-                    continue
-
-                documents.append({
-                    "id": doc.id,
-                    "title": doc.title,
-                    "type": doc.type,
-                    "ref": f"{doc.type} {doc.number}",
-                    "date": doc.date,
-                    "snippet": doc.snippet
-                })
-            except Exception:
-                continue
-
-        # Sort by date descending
-        documents.sort(key=lambda x: x.get('date', ''), reverse=True)
+        """List documents with optional filtering and pagination (from cache)."""
+        # Filter by type if specified
+        if doc_type:
+            documents = [d for d in self._documents_cache if d.get('type') == doc_type]
+        else:
+            documents = self._documents_cache
 
         # Paginate
         total = len(documents)
         start = (page - 1) * page_size
         end = start + page_size
         items = documents[start:end]
+
+        # Remove content_lower from response
+        items = [{k: v for k, v in item.items() if k != 'content_lower'} for item in items]
 
         return {
             "items": items,
@@ -418,39 +441,28 @@ class LawDocumentService:
         page_size: int = 20
     ) -> Dict:
         """
-        Text-based search (case-insensitive) in document title and content.
+        Text-based search (case-insensitive) in document title and content (from cache).
         """
-        results = []
         query_lower = query.lower()
+        results = []
 
-        for filepath in self.docs_root.glob("**/*.json"):
-            try:
-                doc = load_law_document(str(filepath))
-
-                if doc_type and doc.type != doc_type:
-                    continue
-
-                # Simple text search in title and content
-                if query_lower in doc.title.lower() or query_lower in doc.content.lower():
-                    results.append({
-                        "id": doc.id,
-                        "title": doc.title,
-                        "type": doc.type,
-                        "ref": f"{doc.type} {doc.number}",
-                        "date": doc.date,
-                        "snippet": doc.snippet
-                    })
-            except Exception:
+        for doc in self._documents_cache:
+            # Filter by type if specified
+            if doc_type and doc.get('type') != doc_type:
                 continue
 
-        # Sort by date descending
-        results.sort(key=lambda x: x.get('date', ''), reverse=True)
+            # Search in title and cached content
+            if query_lower in doc.get('title', '').lower() or query_lower in doc.get('content_lower', ''):
+                results.append(doc)
 
         # Paginate
         total = len(results)
         start = (page - 1) * page_size
         end = start + page_size
         items = results[start:end]
+
+        # Remove content_lower from response
+        items = [{k: v for k, v in item.items() if k != 'content_lower'} for item in items]
 
         return {
             "items": items,
@@ -461,14 +473,54 @@ class LawDocumentService:
         }
 
     def get_types(self) -> List[str]:
-        """Get list of all document types."""
-        types = set()
+        """Get list of all document types (from cache)."""
+        return self._types_cache
 
+    def _build_content_cache(self) -> None:
+        """Load all law file contents into memory for fast content search."""
+        if self._content_cache:
+            return
+
+        logger.info("Building content cache for search...")
         for filepath in self.docs_root.glob("**/*.json"):
+            if filepath.name.startswith('.'):
+                continue
             try:
-                doc = load_law_document(str(filepath))
-                types.add(doc.type)
+                with open(filepath, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    law_id = str(data.get('Id', ''))
+                    content = data.get('Content', '')
+                    if law_id and content:
+                        self._content_cache.append((law_id, content))
             except Exception:
                 continue
 
-        return sorted(types)
+        logger.info(f"Content cache built with {len(self._content_cache)} documents")
+
+    def search_by_content(self, source_text: str) -> Optional[Dict]:
+        """
+        Find law document by searching source_text in all law file contents.
+        Returns the full document if found.
+        """
+        if not source_text or len(source_text) < 50:
+            return None
+
+        # Strategy: Search for clause content (e.g. "Người nào vô ý làm chết...")
+        # This is more unique and doesn't depend on header formatting
+        clause_match = re.search(r'\d+\.\s+(.{50,120})', source_text)
+        if clause_match:
+            search_text = clause_match.group(1).strip()
+            for law_id, content in self._content_cache:
+                if search_text in content:
+                    logger.info(f"Found by clause content: law_id={law_id}")
+                    return self.get_document(law_id)
+
+        # Fallback: try any long sentence in the source
+        sentences = re.findall(r'[A-ZÀÁẢÃẠĂẰẮẲẴẶÂẦẤẨẪẬĐÈÉẺẼẸÊỀẾỂỄỆÌÍỈĨỊÒÓỎÕỌÔỒỐỔỖỘƠỜỚỞỠỢÙÚỦŨỤƯỪỨỬỮỰỲÝỶỸỴ][^.!?]{50,150}', source_text)
+        for sentence in sentences:
+            for law_id, content in self._content_cache:
+                if sentence in content:
+                    logger.info(f"Found by sentence: law_id={law_id}")
+                    return self.get_document(law_id)
+
+        return None

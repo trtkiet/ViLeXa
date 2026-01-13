@@ -5,6 +5,7 @@ Law Document Lookup API endpoints.
 import logging
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel
 
 from models.lookup import (
     DocumentResponse,
@@ -13,6 +14,10 @@ from models.lookup import (
     TypesResponse,
 )
 from services.lookup_service import LawDocumentService
+
+
+class SearchByContentRequest(BaseModel):
+    source_text: str
 
 
 logger = logging.getLogger(__name__)
@@ -114,3 +119,21 @@ async def get_document_articles(
         raise HTTPException(status_code=404, detail="Document not found or has no articles")
     logger.info(f"Retrieved {len(articles)} articles for document: {doc_id}")
     return [ArticleResponse(**article) for article in articles]
+
+
+@router.post("/search-by-content", response_model=DocumentResponse)
+async def search_by_content(
+    request: SearchByContentRequest,
+    service: LawDocumentService = Depends(get_lookup_service)
+):
+    """
+    Find law document by searching source_text in all law file contents.
+    Used for citation navigation from chat responses.
+    """
+    logger.info(f"Searching by content: {request.source_text[:100]}...")
+    document = service.search_by_content(request.source_text)
+    if not document:
+        logger.warning("Document not found by content search")
+        raise HTTPException(status_code=404, detail="Document not found")
+    logger.info(f"Found document: {document['title']}")
+    return DocumentResponse(**document)
