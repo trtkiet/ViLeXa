@@ -34,10 +34,11 @@ class Config(BaseSettings):
     MODEL: str = "gemini-2.5-flash-lite"
     QDRANT_PORT: int = 6333
     DOCS_ROOT: str = "./law_crawler/vbpl_documents"
-    COLLECTION_NAME: str = "laws"
-    EMBEDDING_MODEL_NAME: str = "Savoxism/vietnamese-legal-embedding-finetuned"
-    EMBEDDINGS_FILE: str = "data/embeddings.pkl"
-    DOCS_FILE: str = "data/documents.json"
+    CHUNK_SIZE: int = 1024
+    COLLECTION_NAME: str = f"laws_processed_chunk_{CHUNK_SIZE}"
+    EMBEDDING_MODEL_NAME: str = "Savoxism/bge-large-en-v1.5-finetuned"
+    EMBEDDINGS_FILE: str = f"data/processed_chunksize_{CHUNK_SIZE}_alibaba/embeddings.pkl"
+    DOCS_FILE: str = f"data/processed_chunksize_{CHUNK_SIZE}_alibaba/documents.json"
 
     
 config = Config()
@@ -77,14 +78,14 @@ def ingest_data() -> None:
     # Prepare data for upsert
     client.create_collection(
         collection_name=collection_name,
-        vectors_config=VectorParams(size=1024, distance=Distance.COSINE),
+        vectors_config=VectorParams(size=768, distance=Distance.COSINE),
     )
     
     docs = _load_docs_from_json(config.DOCS_FILE)
     embeddings = _read_embeddings_from_pkl(config.EMBEDDINGS_FILE)
 
     # Configuration
-    BATCH_SIZE = 64  # 64-128 is usually the sweet spot for network/speed
+    BATCH_SIZE = 128  # 64-128 is usually the sweet spot for network/speed
 
     # Calculate total for progress bar
     total_docs = len(docs)
