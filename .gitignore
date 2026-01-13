@@ -14,9 +14,10 @@ qdrant_data/
 
 # Environment variables
 
-.env
+.env*
 *.ipynb
 *.rar
 .vs_code/
 .vscode
 data/
+evaluate/

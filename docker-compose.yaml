@@ -14,6 +14,13 @@ services:
       - DOCS_ROOT=/law_crawler/vbpl_documents
     depends_on:
       - qdrant
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1 # Or 'all'
+              capabilities: [gpu]
 
   qdrant:
     image: qdrant/qdrant:latest

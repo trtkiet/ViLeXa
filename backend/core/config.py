@@ -13,9 +13,10 @@ class Config(BaseSettings):
     QDRANT_PORT: int = 6333
     DOCS_ROOT: str = "./law_crawler/vbpl_documents"
     COLLECTION_NAME: str = "laws"
-    EMBEDDING_MODEL_NAME: str = "Savoxism/vietnamese-legal-embedding-finetuned"
+    EMBEDDING_MODEL_NAME: str = "Alibaba-NLP/gte-multilingual-base"
     EMBEDDINGS_FILE: str = "data/embeddings.pkl"
     DOCS_FILE: str = "data/documents.json"
+    TOP_K: int = 4
 
     
 config = Config()

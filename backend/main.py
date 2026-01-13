@@ -26,7 +26,7 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup_event() -> None:
     setup_logging()
-    lookup_service.startup()
+    # lookup_service.startup()
     chat_service.startup()
 
 
