@@ -35,7 +35,7 @@ class Config(BaseSettings):
     QDRANT_PORT: int = 6333
     DOCS_ROOT: str = "./law_crawler/vbpl_documents"
     CHUNK_SIZE: int = 1024
-    COLLECTION_NAME: str = f"laws_processed_chunk_{CHUNK_SIZE}"
+    COLLECTION_NAME: str = f"laws"
     EMBEDDING_MODEL_NAME: str = "Savoxism/bge-large-en-v1.5-finetuned"
     EMBEDDINGS_FILE: str = f"data/processed_chunksize_{CHUNK_SIZE}_alibaba/embeddings.pkl"
     DOCS_FILE: str = f"data/processed_chunksize_{CHUNK_SIZE}_alibaba/documents.json"
