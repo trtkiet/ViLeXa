@@ -14,6 +14,7 @@ from core.logging import setup_logging
 from core.database import init_db
 from services.lookup_service import LawDocumentService
 from services.chat_service import ChatService
+from services.pipelines import HybridRAGPipeline
 
 logger = logging.getLogger(__name__)
 
@@ -57,9 +58,13 @@ async def general_exception_handler(request: Request, exc: Exception):
         content={"detail": "An unexpected error occurred. Please try again."},
     )
 
+
 # Global service instances for reuse
 lookup_service = LawDocumentService()
-chat_service = ChatService()
+
+# Configure the RAG pipeline - swap implementations here
+rag_pipeline = HybridRAGPipeline(use_reranker=False)
+chat_service = ChatService(pipeline=rag_pipeline)
 
 app.add_middleware(
     CORSMiddleware,
@@ -76,7 +81,9 @@ async def log_requests(request: Request, call_next):
     if "/auth/me" in request.url.path:
         auth_header = request.headers.get("Authorization", "NOT PRESENT")
         logger.info(f"[DEBUG] Request to {request.url.path}")
-        logger.info(f"[DEBUG] Authorization header: {auth_header[:50] if auth_header != 'NOT PRESENT' else auth_header}...")
+        logger.info(
+            f"[DEBUG] Authorization header: {auth_header[:50] if auth_header != 'NOT PRESENT' else auth_header}..."
+        )
     response = await call_next(request)
     return response
 

@@ -21,3 +21,6 @@ qdrant_data/
 .vscode
 data/
 evaluate/
+AGENTS.md
+*.db
+*.stackdump
