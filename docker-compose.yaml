@@ -9,6 +9,7 @@ services:
     volumes:
       - ./backend:/backend  # This allows "Hot Reload" (updates without restarting)
       - ./law_crawler:/law_crawler  # Mount law documents for lookup service
+      - ~/.cache/huggingface:/root/.cache/huggingface  # Cache AI models
     environment:
       - GEMINI_API_KEY=${GEMINI_API_KEY}  # Passes the Gemini API key from your host environment
       - DOCS_ROOT=/law_crawler/vbpl_documents

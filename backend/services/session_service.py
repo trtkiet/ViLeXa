@@ -187,6 +187,15 @@ class SessionService:
             for source_data in sources:
                 source = MessageSource(
                     message_id=message.id,
+                    # Vietnamese metadata fields
+                    document_id=source_data.get("document_id"),
+                    document_type=source_data.get("document_type"),
+                    document_title=source_data.get("document_title"),
+                    phan=source_data.get("phan"),
+                    chuong=source_data.get("chuong"),
+                    muc=source_data.get("muc"),
+                    dieu=source_data.get("dieu"),
+                    # Legacy fields
                     chapter=source_data.get("chapter"),
                     section=source_data.get("section"),
                     article=source_data.get("article"),

@@ -196,6 +196,18 @@ class VietnameseEmbeddingPipeline(RAGPipeline):
             f"--- VietnameseEmbeddingPipeline Initialization Complete in {time.time() - t_start:.2f}s ---"
         )
 
+    def _flatten_metadata(self, metadata: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Flatten nested metadata from Qdrant payload.
+
+        Handles both nested format: {metadata: {document_id, ...}}
+        and flat format: {document_id, ...}
+        """
+        # If metadata contains a nested 'metadata' key, extract it
+        if "metadata" in metadata and isinstance(metadata["metadata"], dict):
+            return metadata["metadata"]
+        return metadata
+
     def _retrieve_and_rerank(self, query: str) -> tuple[str, List[Dict[str, Any]]]:
         """
         Retrieve documents and optionally rerank them.
@@ -227,21 +239,27 @@ class VietnameseEmbeddingPipeline(RAGPipeline):
             try:
                 top_k_docs = self.reranker.rerank(query, initial_docs, top_k)
                 context_text = "\n\n".join([d.page_content for d in top_k_docs])
-                source_documents = [d.metadata for d in top_k_docs]
+                source_documents = [
+                    self._flatten_metadata(d.metadata) for d in top_k_docs
+                ]
             except Exception as e:
                 logger.error(f"Reranking failed: {e}")
                 # Fallback on error
                 context_text = "\n\n".join(
                     [d.page_content for d in initial_docs[:top_k]]
                 )
-                source_documents = [d.metadata for d in initial_docs[:top_k]]
+                source_documents = [
+                    self._flatten_metadata(d.metadata) for d in initial_docs[:top_k]
+                ]
         else:
             # Fallback if Reranker is disabled or not loaded
             if not self.reranker:
                 logger.info("Reranker is DISABLED. Using raw Qdrant results.")
 
             context_text = "\n\n".join([d.page_content for d in initial_docs[:top_k]])
-            source_documents = [d.metadata for d in initial_docs[:top_k]]
+            source_documents = [
+                self._flatten_metadata(d.metadata) for d in initial_docs[:top_k]
+            ]
 
         t_rerank_end = time.time()
         logger.info(f"2. Reranking           : {t_rerank_end - t_rerank_start:.4f}s")

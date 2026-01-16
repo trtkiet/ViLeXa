@@ -139,6 +139,15 @@ async def get_session(
     for msg in messages:
         sources = [
             SourceResponse(
+                # Vietnamese metadata
+                document_id=s.document_id,
+                document_type=s.document_type,
+                document_title=s.document_title,
+                phan=s.phan,
+                chuong=s.chuong,
+                muc=s.muc,
+                dieu=s.dieu,
+                # Legacy
                 chapter=s.chapter,
                 section=s.section,
                 article=s.article,

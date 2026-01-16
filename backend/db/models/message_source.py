@@ -20,6 +20,17 @@ class MessageSource(Base):
     message_id: Mapped[int] = mapped_column(
         ForeignKey("messages.id", ondelete="CASCADE"), nullable=False, index=True
     )
+
+    # Vietnamese metadata fields
+    document_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    document_type: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    document_title: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    phan: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    chuong: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    muc: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    dieu: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+
+    # Legacy fields (backward compatibility)
     chapter: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     section: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     article: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)

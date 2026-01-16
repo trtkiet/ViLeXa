@@ -81,17 +81,12 @@ def create_access_token(
 
 def decode_access_token(token: str) -> Optional[dict[str, Any]]:
     """Decode and validate a JWT access token."""
-    import logging
-    logger = logging.getLogger(__name__)
-
     try:
-        logger.info(f"Decoding token with key: {config.JWT_SECRET_KEY[:10]}... and algorithm: {config.JWT_ALGORITHM}")
         payload = jwt.decode(
             token,
             config.JWT_SECRET_KEY,
             algorithms=[config.JWT_ALGORITHM]
         )
         return payload
-    except JWTError as e:
-        logger.error(f"JWT decode error: {type(e).__name__}: {e}")
+    except JWTError:
         return None

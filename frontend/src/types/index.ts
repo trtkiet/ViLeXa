@@ -5,12 +5,24 @@ export interface Message {
 }
 
 export interface LawSource {
-  chapter: string;
-  section: string;
-  article: string;
-  article_title: string;
-  clause: string;
-  source_text: string;
+  // Vietnamese metadata fields from Qdrant
+  document_id?: string;
+  document_type?: string;
+  document_title?: string;
+  phan?: string | null;      // Phần
+  chuong?: string | null;    // Chương  
+  muc?: string | null;       // Mục
+  dieu?: string | null;      // Điều
+  id?: string;               // chunk UUID
+  chunk_split_index?: number;
+  
+  // Legacy fields (for backward compatibility)
+  chapter?: string;
+  section?: string;
+  article?: string;
+  article_title?: string;
+  clause?: string;
+  source_text?: string;
 }
 
 export interface LawDocument {

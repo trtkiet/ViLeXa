@@ -66,13 +66,27 @@ const LoadingSpinner: React.FC = () => (
   </svg>
 );
 
+// Flatten nested metadata from Qdrant payload
+// Handles both {metadata: {document_id, ...}} and flat {document_id, ...}
+function flattenSource(source: Record<string, unknown>): LawSource {
+  if (source.metadata && typeof source.metadata === 'object') {
+    return source.metadata as LawSource;
+  }
+  return source as LawSource;
+}
+
+function flattenSources(sources: unknown[]): LawSource[] {
+  if (!sources) return [];
+  return sources.map(s => flattenSource(s as Record<string, unknown>));
+}
+
 // Convert session messages to extended messages
 function convertSessionMessages(messages: SessionMessage[]): ExtendedMessage[] {
   return messages.map(msg => ({
     id: msg.id,
     role: msg.role,
     text: msg.content,
-    sources: msg.sources as LawSource[],
+    sources: flattenSources(msg.sources as unknown[]),
   }));
 }
 
@@ -125,30 +139,21 @@ export const ChatPage: React.FC = () => {
     loadMessages();
   }, [activeSessionId, getSession]);
 
-  // Navigate to lookup page by searching source content
-  const handleSourceClick = async (source: LawSource) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/documents/search-by-content`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...getAuthHeader(),
-        },
-        body: JSON.stringify({ source_text: source.source_text }),
-      });
-
-      if (response.ok) {
-        const document = await response.json();
-        const params = new URLSearchParams({
-          id: document.id,
-          article: source.article,
-        });
-        navigate(`/lookup?${params.toString()}`);
-      } else {
-        console.error('Document not found');
+  // Navigate to lookup page using document_id from source metadata
+  const handleSourceClick = (source: LawSource) => {
+    // Use Vietnamese metadata format (document_id) or fallback to legacy search
+    const docId = source.document_id;
+    
+    if (docId) {
+      // Direct navigation using document_id
+      const params = new URLSearchParams({ id: docId });
+      if (source.dieu) {
+        params.set('article', source.dieu);
       }
-    } catch (error) {
-      console.error('Error searching document:', error);
+      navigate(`/lookup?${params.toString()}`);
+    } else {
+      // Fallback for legacy format - just navigate to lookup
+      console.warn('No document_id in source, cannot navigate');
     }
   };
 
@@ -228,7 +233,7 @@ export const ChatPage: React.FC = () => {
       setMessages(prev => [...prev, {
         role: 'ai',
         text: data.reply,
-        sources: data.sources,
+        sources: flattenSources(data.sources || []),
       }]);
     } catch (error) {
       let errorMessage = 'An unknown error occurred. Please try again.';
@@ -453,16 +458,27 @@ export const ChatPage: React.FC = () => {
                             className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm hover:bg-gray-100 hover:border-gray-300 transition-colors cursor-pointer"
                           >
                             <div className="font-medium text-blue-700 flex items-center gap-2">
-                              <span className="text-xs bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded font-medium">
-                                {source.article}
+                              {(source.dieu || source.article) && (
+                                <span className="text-xs bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded font-medium">
+                                  {source.dieu || source.article}
+                                </span>
+                              )}
+                              <span className="truncate">
+                                {source.document_title || source.article_title || 'Unknown Document'}
                               </span>
-                              <span className="truncate">{source.article_title}</span>
                             </div>
-                            <div className="text-gray-600 text-xs mt-1.5 line-clamp-2">
-                              {source.source_text}
-                            </div>
-                            <div className="mt-1.5 text-[10px] text-gray-400">
-                              {source.chapter}
+                            {source.document_type && (
+                              <div className="text-gray-600 text-xs mt-1.5">
+                                {source.document_type}
+                              </div>
+                            )}
+                            <div className="mt-1.5 text-[10px] text-gray-400 flex flex-wrap gap-1">
+                              {source.phan && <span>{source.phan}</span>}
+                              {source.chuong && <span>| {source.chuong}</span>}
+                              {source.muc && <span>| {source.muc}</span>}
+                              {!source.phan && !source.chuong && source.chapter && (
+                                <span>{source.chapter}</span>
+                              )}
                             </div>
                           </div>
                         ))}

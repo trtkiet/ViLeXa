@@ -39,6 +39,16 @@ class SessionListResponse(BaseModel):
 class SourceResponse(BaseModel):
     """Schema for message source."""
 
+    # Vietnamese metadata fields
+    document_id: Optional[str] = None
+    document_type: Optional[str] = None
+    document_title: Optional[str] = None
+    phan: Optional[str] = None
+    chuong: Optional[str] = None
+    muc: Optional[str] = None
+    dieu: Optional[str] = None
+
+    # Legacy fields
     chapter: Optional[str] = None
     section: Optional[str] = None
     article: Optional[str] = None
