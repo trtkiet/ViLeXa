@@ -14,7 +14,7 @@ from core.logging import setup_logging
 from core.database import init_db
 from services.lookup_service import LawDocumentService
 from services.chat_service import ChatService
-from services.pipelines import HybridRAGPipeline
+from services.pipelines import GTEPipeline, VietnameseEmbeddingPipeline
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +63,7 @@ async def general_exception_handler(request: Request, exc: Exception):
 lookup_service = LawDocumentService()
 
 # Configure the RAG pipeline - swap implementations here
-rag_pipeline = HybridRAGPipeline(use_reranker=False)
+rag_pipeline = VietnameseEmbeddingPipeline()
 chat_service = ChatService(pipeline=rag_pipeline)
 
 app.add_middleware(

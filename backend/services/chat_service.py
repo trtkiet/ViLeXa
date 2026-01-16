@@ -6,7 +6,7 @@ from typing import Optional, Dict, Any
 from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain_core.chat_history import BaseChatMessageHistory
 
-from services.pipelines import RAGPipeline, HybridRAGPipeline
+from services.pipelines import RAGPipeline, GTEPipeline
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -35,10 +35,10 @@ class ChatService:
 
         Args:
             pipeline: The RAG pipeline to use for processing queries.
-                     Defaults to HybridRAGPipeline if not provided.
+                     Defaults to GTEPipeline if not provided.
         """
-        # Default to HybridRAGPipeline for backward compatibility
-        self.pipeline = pipeline or HybridRAGPipeline(use_reranker=False)
+        # Default to GTEPipeline
+        self.pipeline = pipeline or GTEPipeline()
         self.session_store: Dict[str, BaseChatMessageHistory] = {}
 
     def startup(self) -> None:
@@ -79,7 +79,7 @@ class ChatService:
         history = self._get_session_history(session_id)
 
         # Run the pipeline with history
-        result = self.pipeline.run(query, history=history.messages)
+        result = self.pipeline.respond(query, history=history.messages)
 
         # Update history with this exchange
         # Note: The API layer (chat.py) also manages history persistence to DB,

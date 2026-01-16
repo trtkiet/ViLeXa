@@ -33,7 +33,7 @@ class RAGPipeline(ABC):
         pass
 
     @abstractmethod
-    def run(
+    def respond(
         self,
         query: str,
         history: Optional[List[BaseMessage]] = None,
@@ -48,6 +48,24 @@ class RAGPipeline(ABC):
         Returns:
             A dictionary containing:
                 - "answer": The generated response text.
+                - "sources": List of source document metadata.
+        """
+        pass
+
+    @abstractmethod
+    def retrieve_context(
+        self,
+        query: str,
+    ) -> Dict[str, Any]:
+        """
+        Retrieve context documents without generating a response.
+
+        Args:
+            query: The user's question/input.
+
+        Returns:
+            A dictionary containing:
+                - "context": The retrieved context text.
                 - "sources": List of source document metadata.
         """
         pass
