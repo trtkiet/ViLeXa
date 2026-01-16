@@ -175,18 +175,42 @@ export const LookupPage: React.FC = () => {
     contentWrapperRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-  const scrollToTocItem = useCallback((position: number) => {
-    if (!contentWrapperRef.current) return;
+  const scrollToTocItem = useCallback((item: TocItem) => {
+    const wrapperEl = contentWrapperRef.current;
+    if (!wrapperEl) return;
 
-    const textBefore = selectedDoc?.content?.substring(0, position) || '';
-    const linesBefore = textBefore.split('\n').length;
-    const lineHeight = 28;
+    // Find element by TOC id
+    const targetElement = document.getElementById(item.id);
+    if (!targetElement) return;
 
-    contentWrapperRef.current.scrollTo({
-      top: linesBefore * lineHeight - 100,
+    // Calculate the target scroll position
+    const wrapperRect = wrapperEl.getBoundingClientRect();
+    const elementRect = targetElement.getBoundingClientRect();
+    const currentScrollTop = wrapperEl.scrollTop;
+    
+    // Calculate where to scroll: element position relative to container + current scroll - offset for header
+    const targetScrollTop = currentScrollTop + (elementRect.top - wrapperRect.top) - 80;
+    
+    wrapperEl.scrollTo({
+      top: Math.max(0, targetScrollTop),
       behavior: 'smooth'
     });
-  }, [selectedDoc?.content]);
+
+    // Wait for scroll to finish, then flash highlight effect
+    const scrollDistance = Math.abs(targetScrollTop - currentScrollTop);
+    const scrollDuration = Math.min(500, scrollDistance * 0.5); // Estimate scroll duration
+    
+    setTimeout(() => {
+      targetElement.classList.add('bg-yellow-200', 'transition-colors', 'duration-300');
+      setTimeout(() => {
+        targetElement.classList.remove('bg-yellow-200');
+        targetElement.classList.add('bg-transparent');
+        setTimeout(() => {
+          targetElement.classList.remove('transition-colors', 'duration-300', 'bg-transparent');
+        }, 300);
+      }, 800);
+    }, scrollDuration);
+  }, []);
 
   // PDF Export function using browser print
   const exportToPdf = useCallback(() => {
@@ -342,17 +366,31 @@ export const LookupPage: React.FC = () => {
   useEffect(() => {
     if (highlightArticle && contentRef.current && selectedDoc?.content) {
       setTimeout(() => {
-        const articleMatch = selectedDoc.content?.match(new RegExp(`(${highlightArticle}[^\\n]*)`, 'i'));
-        if (articleMatch && contentRef.current && contentWrapperRef.current) {
-          const content = contentRef.current.innerText;
-          const articleIndex = content.indexOf(articleMatch[1]);
-          if (articleIndex !== -1) {
-            const lineHeight = 28;
-            const linesBeforeArticle = content.substring(0, articleIndex).split('\n').length;
-            contentWrapperRef.current.scrollTo({
-              top: linesBeforeArticle * lineHeight - 100,
-              behavior: 'smooth'
-            });
+        // Find element containing the article text in the DOM
+        const contentEl = contentRef.current;
+        if (!contentEl) return;
+        
+        // Search through all text nodes to find the article
+        const walker = document.createTreeWalker(
+          contentEl,
+          NodeFilter.SHOW_TEXT,
+          null
+        );
+        
+        let node;
+        while ((node = walker.nextNode())) {
+          if (node.textContent && node.textContent.includes(highlightArticle)) {
+            // Found the node, scroll its parent element into view
+            const parentElement = node.parentElement;
+            if (parentElement) {
+              parentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              // Add highlight effect
+              parentElement.style.backgroundColor = '#fef08a';
+              setTimeout(() => {
+                parentElement.style.backgroundColor = '';
+              }, 2000);
+            }
+            break;
           }
         }
       }, 100);
@@ -483,24 +521,59 @@ export const LookupPage: React.FC = () => {
     }
   };
 
-  // Highlight article in content
+  // Render content with TOC anchors and optional highlighting
   const renderContent = (content: string) => {
-    if (!highlightArticle) {
-      return content;
-    }
+    // Patterns for Vietnamese legal document structure (same as extractToc)
+    const tocPatterns = [
+      /^(PHẦN\s+[IVXLCDM\d]+)[.:\s]*(.*)/i,
+      /^(Chương\s+[IVXLCDM\d]+)[.:\s]*(.*)/i,
+      /^(Mục\s+\d+)[.:\s]*(.*)/i,
+      /^(Điều\s+\d+)[.:\s]*(.*)/i,
+    ];
 
-    const regex = new RegExp(`(${highlightArticle}[.:]?[^\\n]*)`, 'gi');
-    const parts = content.split(regex);
-
-    return parts.map((part, index) => {
-      if (regex.test(part)) {
+    const lines = content.split('\n');
+    let tocIndex = 0;
+    
+    return lines.map((line, lineIndex) => {
+      const trimmedLine = line.trim();
+      let isTocItem = false;
+      let currentTocId = '';
+      
+      // Check if this line matches any TOC pattern
+      for (const pattern of tocPatterns) {
+        if (pattern.test(trimmedLine)) {
+          isTocItem = true;
+          currentTocId = `toc-${tocIndex}`;
+          tocIndex++;
+          break;
+        }
+      }
+      
+      // Check if this line should be highlighted
+      const shouldHighlight = highlightArticle && 
+        new RegExp(`${highlightArticle}[.:]?`, 'i').test(line);
+      
+      if (isTocItem) {
         return (
-          <mark key={index} className="bg-yellow-200 px-1 rounded">
-            {part}
-          </mark>
+          <span key={lineIndex}>
+            <span id={currentTocId} className={`scroll-mt-24 ${shouldHighlight ? 'bg-yellow-200 px-1 rounded' : ''}`}>
+              {line}
+            </span>
+            {'\n'}
+          </span>
         );
       }
-      return part;
+      
+      if (shouldHighlight) {
+        return (
+          <span key={lineIndex}>
+            <mark className="bg-yellow-200 px-1 rounded">{line}</mark>
+            {'\n'}
+          </span>
+        );
+      }
+      
+      return lineIndex < lines.length - 1 ? line + '\n' : line;
     });
   };
 
@@ -829,7 +902,7 @@ export const LookupPage: React.FC = () => {
                   {toc.map((item) => (
                     <button
                       key={item.id}
-                      onClick={() => scrollToTocItem(item.position)}
+                      onClick={() => scrollToTocItem(item)}
                       className={`w-full text-left text-sm py-1.5 px-2 rounded transition-colors hover:bg-slate-200 text-slate-600 hover:text-slate-900 ${
                         item.level === 1 ? 'font-semibold' :
                         item.level === 2 ? 'pl-4' :

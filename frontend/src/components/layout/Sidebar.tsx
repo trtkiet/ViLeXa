@@ -115,15 +115,19 @@ export function Sidebar({
                       />
                     </form>
                   ) : (
-                    <button
-                      onClick={() => onSelectSession(session.id)}
-                      className={`w-full flex items-center justify-between gap-2 px-3 py-2 text-sm rounded-lg transition-colors group ${
+                    <div
+                      className={`w-full flex items-center justify-between gap-2 px-3 py-2 text-sm rounded-lg transition-colors group cursor-pointer ${
                         activeSessionId === session.id
                           ? 'bg-gray-200 text-gray-900'
                           : 'text-gray-700 hover:bg-gray-100'
                       }`}
                     >
-                      <span className="truncate flex-1 text-left">{session.title}</span>
+                      <span 
+                        onClick={() => onSelectSession(session.id)}
+                        className="truncate flex-1 text-left"
+                      >
+                        {session.title}
+                      </span>
                       <button
                         onClick={e => {
                           e.stopPropagation();
@@ -135,7 +139,7 @@ export function Sidebar({
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
                         </svg>
                       </button>
-                    </button>
+                    </div>
                   )}
 
                   {/* Session Menu */}
