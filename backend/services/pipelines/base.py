@@ -1,7 +1,7 @@
 """Abstract base class for RAG pipelines."""
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Iterator
 
 from langchain_core.messages import BaseMessage
 
@@ -67,6 +67,27 @@ class RAGPipeline(ABC):
             A dictionary containing:
                 - "context": The retrieved context text.
                 - "sources": List of source document metadata.
+        """
+        pass
+
+    @abstractmethod
+    def stream_respond(
+        self,
+        query: str,
+        history: Optional[List[BaseMessage]] = None,
+    ) -> Iterator[Dict[str, Any]]:
+        """
+        Execute the RAG pipeline with streaming response.
+
+        Args:
+            query: The user's question/input.
+            history: Optional list of previous chat messages for context.
+
+        Yields:
+            Dictionaries containing either:
+                - {"type": "sources", "sources": [...]} - Source documents (first yield)
+                - {"type": "token", "token": "..."} - Generated tokens
+                - {"type": "done", "answer": "..."} - Final complete answer
         """
         pass
 

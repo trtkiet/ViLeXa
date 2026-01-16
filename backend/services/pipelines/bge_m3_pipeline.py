@@ -2,7 +2,7 @@
 
 import logging
 import time
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Iterator
 
 from langchain_qdrant import QdrantVectorStore, RetrievalMode
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -367,3 +367,83 @@ class BGEM3Pipeline(RAGPipeline):
             "answer": response_text,
             "sources": source_documents,
         }
+
+    def stream_respond(
+        self,
+        query: str,
+        history: Optional[List[BaseMessage]] = None,
+    ) -> Iterator[Dict[str, Any]]:
+        """
+        Execute the RAG pipeline with streaming response.
+
+        Args:
+            query: The user's question.
+            history: Optional list of previous chat messages.
+
+        Yields:
+            Dictionaries with streaming data.
+        """
+        if not self._initialized:
+            self.startup()
+
+        if self.model is None:
+            yield {"type": "error", "error": "LLM not initialized (skip_llm=True)"}
+            return
+
+        logger.info(f"[Stream] Processing Query: '{query}'")
+        total_start_time = time.time()
+
+        # Retrieve and rerank first
+        context_text, source_documents = self._retrieve_and_rerank(query)
+
+        # Yield sources immediately
+        yield {"type": "sources", "sources": source_documents}
+
+        # Stream generation
+        t_gen_start = time.time()
+
+        system_template = """Bạn là một trợ lý AI về pháp luật Việt Nam, hãy trả lời câu hỏi dựa trên ngữ cảnh được cung cấp.
+Nếu ngữ cảnh không đủ để trả lời, hãy nói rằng bạn không có đủ thông tin, không tự bịa thêm.
+Hãy trích dẫn cụ thể điều luật, khoản, điểm khi trả lời.
+
+Ngữ cảnh:
+{context}"""
+
+        prompt_template = ChatPromptTemplate.from_messages(
+            [
+                ("system", system_template),
+                MessagesPlaceholder(variable_name="history"),
+                ("human", "{question}"),
+            ]
+        )
+
+        chain = prompt_template | self.model
+
+        try:
+            history_messages = history if history else []
+            full_response = ""
+
+            for chunk in chain.stream(
+                {
+                    "context": context_text,
+                    "question": query,
+                    "history": history_messages,
+                }
+            ):
+                token = chunk.content if hasattr(chunk, "content") else str(chunk)
+                if token:
+                    full_response += token
+                    yield {"type": "token", "token": token}
+
+            t_gen_end = time.time()
+            logger.info(f"[Stream] Generation time: {t_gen_end - t_gen_start:.4f}s")
+
+            # Yield final complete answer
+            yield {"type": "done", "answer": full_response}
+
+        except Exception as e:
+            logger.error(f"[Stream] Gemini Error: {e}")
+            yield {"type": "error", "error": str(e)}
+
+        total_time = time.time() - total_start_time
+        logger.info(f"[Stream] Total Request Time: {total_time:.4f}s")

@@ -1,7 +1,7 @@
 """Chat service that orchestrates RAG pipelines for conversational AI."""
 
 import logging
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Iterator
 
 from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain_core.chat_history import BaseChatMessageHistory
@@ -88,6 +88,35 @@ class ChatService:
         history.add_ai_message(result["answer"])
 
         return result
+
+    def stream_respond(
+        self, query: str, session_id: Optional[str] = "default"
+    ) -> Iterator[Dict[str, Any]]:
+        """
+        Process a user query and stream the response.
+
+        Args:
+            query: The user's question or message.
+            session_id: Identifier for the conversation session.
+
+        Yields:
+            Dictionaries with streaming data (sources, tokens, done/error).
+        """
+        # Get history for this session
+        history = self._get_session_history(session_id or "default")
+
+        full_answer = ""
+
+        # Stream from pipeline
+        for chunk in self.pipeline.stream_respond(query, history=history.messages):
+            if chunk.get("type") == "done":
+                full_answer = chunk.get("answer", "")
+            yield chunk
+
+        # Update history with this exchange after streaming completes
+        if full_answer:
+            history.add_user_message(query)
+            history.add_ai_message(full_answer)
 
 
 def main():
