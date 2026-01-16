@@ -3,20 +3,9 @@ import { useNavigate, useParams, NavLink } from 'react-router-dom';
 import type { LawSource } from '../types/index';
 import type { SessionMessage } from '../types/session';
 import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import { Sidebar } from '../components/layout/Sidebar';
 import { useSessions, type SessionError } from '../hooks/useSessions';
 import { getAuthHeader, API_BASE_URL } from '../services/api';
-
-// SSE Stream event types
-interface StreamEvent {
-  type: 'session' | 'sources' | 'token' | 'done' | 'error';
-  session_id?: string;
-  sources?: LawSource[];
-  token?: string;
-  answer?: string;
-  error?: string;
-}
 
 // Toast notification component
 const Toast: React.FC<{ error: SessionError; onDismiss: () => void }> = ({ error, onDismiss }) => (
@@ -43,10 +32,14 @@ interface ExtendedMessage {
   sources?: LawSource[];
   isError?: boolean;
   errorType?: 'network' | 'server' | 'unknown';
-  isStreaming?: boolean;
 }
 
-
+// Chat API response
+interface ChatApiResponse {
+  reply: string;
+  sources?: LawSource[];
+  session_id: string;
+}
 
 // Typing indicator component
 const TypingIndicator: React.FC = () => (
@@ -186,34 +179,16 @@ export const ChatPage: React.FC = () => {
     }
   }, [isLoading]);
 
-  // Send message to API with streaming
+  // Send message to API
   const sendMessageToAPI = useCallback(async (messageText: string, sessionId: string | null) => {
     setIsLoading(true);
     setLastFailedMessage(null);
 
-    // Generate a unique ID for this streaming message to track it
-    const streamingMsgId = Date.now();
-
-    // Add a placeholder AI message for streaming
-    setMessages(prev => [...prev, {
-      id: streamingMsgId,
-      role: 'ai',
-      text: '',
-      isStreaming: true,
-    }]);
-
-    // Helper to update the streaming message by ID
-    const updateStreamingMessage = (updates: Partial<ExtendedMessage>) => {
-      setMessages(prev => prev.map(msg => 
-        msg.id === streamingMsgId ? { ...msg, ...updates } : msg
-      ));
-    };
-
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 min timeout for streaming
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
 
-      const response = await fetch(`${API_BASE_URL}/api/v1/chat/stream`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -239,92 +214,35 @@ export const ChatPage: React.FC = () => {
           : `An error occurred (code: ${response.status}). Please try again.`;
 
         setLastFailedMessage(messageText);
-        updateStreamingMessage({
+        setMessages(prev => [...prev, {
+          role: 'ai',
           text: errorMessage,
           isError: true,
-          errorType,
-          isStreaming: false,
-        });
+          errorType
+        }]);
         return;
       }
 
-      const reader = response.body?.getReader();
-      if (!reader) throw new Error('No response body');
+      const data = await response.json() as ChatApiResponse;
 
-      const decoder = new TextDecoder();
-      let buffer = '';
-      let streamedText = '';
-      let sources: LawSource[] = [];
-      let newSessionId: string | null = null;
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const event: StreamEvent = JSON.parse(line.slice(6));
-
-              switch (event.type) {
-                case 'session':
-                  newSessionId = event.session_id || null;
-                  // If this was a new session, update URL after streaming completes
-                  break;
-
-                case 'sources':
-                  sources = flattenSources(event.sources || []);
-                  // Update sources immediately so they show while streaming
-                  updateStreamingMessage({ sources });
-                  break;
-
-                case 'token':
-                  streamedText += event.token || '';
-                  updateStreamingMessage({
-                    text: streamedText,
-                    sources,
-                    isStreaming: true,
-                  });
-                  break;
-
-                case 'done':
-                  updateStreamingMessage({
-                    text: event.answer || streamedText,
-                    sources,
-                    isStreaming: false,
-                  });
-                  // Now update URL and session list after streaming is complete
-                  if (!sessionId && newSessionId) {
-                    navigate(`/chat/${newSessionId}`, { replace: true });
-                    fetchSessions();
-                  }
-                  if (newSessionId) {
-                    updateSessionInList(newSessionId, {
-                      updated_at: new Date().toISOString(),
-                    });
-                  }
-                  break;
-
-                case 'error':
-                  setLastFailedMessage(messageText);
-                  updateStreamingMessage({
-                    text: event.error || 'An error occurred',
-                    isError: true,
-                    errorType: 'server',
-                    isStreaming: false,
-                  });
-                  break;
-              }
-            } catch {
-              // Ignore parse errors for incomplete JSON
-            }
-          }
-        }
+      // If this was a new session, update URL and refresh sessions list
+      if (!sessionId && data.session_id) {
+        navigate(`/chat/${data.session_id}`, { replace: true });
+        fetchSessions();
       }
+
+      // Update session in list to move it to top
+      if (data.session_id) {
+        updateSessionInList(data.session_id, {
+          updated_at: new Date().toISOString(),
+        });
+      }
+
+      setMessages(prev => [...prev, {
+        role: 'ai',
+        text: data.reply,
+        sources: flattenSources(data.sources || []),
+      }]);
     } catch (error) {
       let errorMessage = 'An unknown error occurred. Please try again.';
       let errorType: 'network' | 'server' | 'unknown' = 'unknown';
@@ -340,16 +258,16 @@ export const ChatPage: React.FC = () => {
       }
 
       setLastFailedMessage(messageText);
-      updateStreamingMessage({
+      setMessages(prev => [...prev, {
+        role: 'ai',
         text: errorMessage,
         isError: true,
-        errorType,
-        isStreaming: false,
-      });
+        errorType
+      }]);
     } finally {
       setIsLoading(false);
     }
-  }, [navigate, fetchSessions, updateSessionInList]);
+  }, [selectSession, fetchSessions, updateSessionInList]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -516,25 +434,14 @@ export const ChatPage: React.FC = () => {
                 )}
 
                 <div className={`flex flex-col max-w-[85%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                  <div className={`rounded-2xl px-4 py-3 ${
+                  <div className={`prose prose-gray prose-sm max-w-none rounded-2xl px-4 py-2.5 ${
                     msg.role === 'user'
-                      ? 'bg-gray-900 text-white rounded-br-md'
+                      ? 'bg-gray-100 text-gray-800 rounded-br-sm'
                       : msg.isError
                       ? 'bg-red-50 text-red-700 border border-red-200'
-                      : 'bg-gray-100 text-gray-800 rounded-bl-md'
+                      : 'bg-transparent text-gray-800 px-0 py-0'
                   }`}>
-                    <div className={`prose prose-sm max-w-none ${
-                      msg.role === 'user' 
-                        ? 'prose-invert' 
-                        : 'prose-gray'
-                    } prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-0.5 prose-headings:my-3 prose-pre:my-2 prose-pre:bg-gray-800 prose-pre:text-gray-100 prose-code:text-blue-600 prose-code:bg-blue-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none`}>
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {msg.text || (msg.isStreaming ? '...' : '')}
-                      </ReactMarkdown>
-                      {msg.isStreaming && (
-                        <span className="inline-block w-2 h-4 bg-gray-400 animate-pulse ml-0.5" />
-                      )}
-                    </div>
+                    <ReactMarkdown>{msg.text}</ReactMarkdown>
                   </div>
 
                   {/* Retry button for error messages */}
