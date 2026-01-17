@@ -571,53 +571,50 @@
 \begin{frame}{Self-Reflective RAG: LangGraph Implementation}
     \begin{center}
     \begin{tikzpicture}[
-        scale=0.75,
+        scale=0.65,
         transform shape,
-        node/.style={rectangle, draw=dark, fill=#1, rounded corners, minimum width=1.8cm, minimum height=0.7cm, align=center, font=\small},
-        decision/.style={diamond, draw=dark, fill=#1, minimum width=1.2cm, minimum height=0.9cm, align=center, font=\tiny, aspect=1.5},
+        node/.style={rectangle, draw=dark, fill=#1, rounded corners, minimum width=2cm, minimum height=0.8cm, align=center, font=\small},
+        decision/.style={diamond, draw=dark, fill=#1, minimum width=1.4cm, minimum height=1.1cm, align=center, font=\tiny, aspect=1.5},
         arr/.style={-{Stealth[length=2mm]}, thick}
     ]
-        % Start
+        % Top row - spread out with spacing of 4.5
         \node[node=gray!20] (query) at (0, 0) {User Query};
         
-        % Route
-        \node[decision=accent!30] (route) at (3.5, 0) {Legal\\Query?};
+        \node[decision=accent!30] (route) at (4.5, 0) {Legal\\Query?};
         \draw[arr] (query) -- (route);
         
-        % Direct generate (chit-chat)
-        \node[node=blue!15] (direct) at (3.5, -3) {Direct Answer};
-        \draw[arr] (route) -- node[right, font=\tiny] {No} (direct);
-        
-        % Retrieve
-        \node[node=purple!20] (retrieve) at (7, 0) {Retrieve\\(k=10)};
+        \node[node=purple!20] (retrieve) at (9, 0) {Retrieve\\(k=10)};
         \draw[arr] (route) -- node[above, font=\tiny] {Yes} (retrieve);
         
-        % Grade
-        \node[decision=secondary!30] (grade) at (10.5, 0) {Relevant\\Docs?};
+        \node[decision=secondary!30] (grade) at (13.5, 0) {Relevant\\Docs?};
         \draw[arr] (retrieve) -- (grade);
         
-        % Generate
-        \node[node=blue!20] (generate) at (14, 0) {Generate\\Answer};
+        \node[node=blue!20] (generate) at (18, 0) {Generate\\Answer};
         \draw[arr] (grade) -- node[above, font=\tiny] {Yes} (generate);
         
-        % Rewrite loop
-        \node[node=accent!20] (rewrite) at (10.5, -3) {Rewrite\\Query};
+        % Bottom row
+        \node[node=blue!15] (direct) at (4.5, -4.5) {Direct Answer};
+        \draw[arr] (route) -- node[right, font=\tiny] {No} (direct);
+        
+        \node[node=danger!20] (nodocs) at (9, -4.5) {No Info\\Available};
+        
+        \node[node=accent!20] (rewrite) at (13.5, -4.5) {Rewrite\\Query};
         \draw[arr] (grade) -- node[right, font=\tiny] {No} (rewrite);
         
-        % Rewrite back to retrieve - go around, not through
-        \draw[arr] (rewrite.west) -- ++(-0.5, 0) |- node[left, font=\tiny, pos=0.75] {retry $\leq$ 3} (retrieve.south west);
-        
-        % No docs found
-        \node[node=danger!20] (nodocs) at (7, -3) {No Info\\Available};
-        \draw[arr, dashed] (rewrite) -- node[above, font=\tiny] {max} (nodocs);
-        
-        % Output
-        \node[node=best!30] (output) at (14, -3) {Response\\+ Sources};
+        \node[node=best!30] (output) at (18, -4.5) {Response\\+ Sources};
         \draw[arr] (generate) -- (output);
         
-        % Connect direct and nodocs to output - go below
-        \draw[arr] (direct.south) -- ++(0, -0.5) -| (output.south west);
-        \draw[arr] (nodocs.south) -- ++(0, -0.5) -| (output.south);
+        % Rewrite back to Retrieve - go UP then LEFT clearly above other elements
+        \draw[arr] (rewrite.north) -- ++(0, 1.5) -| node[above, font=\tiny, pos=0.25] {retry $\leq$ 3} (retrieve.south);
+        
+        % Rewrite to No Info (max retries) - goes LEFT
+        \draw[arr, dashed] (rewrite.west) -- node[above, font=\tiny] {max} (nodocs.east);
+        
+        % Direct Answer to Output - goes right along bottom
+        \draw[arr] (direct.east) -- ++(0.5, 0) |- (output.west);
+        
+        % No Info to Output
+        \draw[arr] (nodocs.south) -- ++(0, -0.8) -| (output.south);
         
     \end{tikzpicture}
     \end{center}
