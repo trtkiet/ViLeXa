@@ -113,76 +113,77 @@
 \begin{frame}{System Architecture: End-to-End Pipeline}
     \begin{center}
     \begin{tikzpicture}[
-        scale=0.8,
-        box/.style={rectangle, draw=dark, fill=#1, rounded corners=3pt, minimum height=0.65cm, align=center, font=\footnotesize},
-        db/.style={cylinder, draw=dark, fill=#1, shape border rotate=90, aspect=0.3, minimum height=0.7cm, minimum width=0.9cm, align=center, font=\tiny},
+        scale=0.72,
+        transform shape,
+        box/.style={rectangle, draw=dark, fill=#1, rounded corners=3pt, minimum height=0.7cm, align=center, font=\footnotesize},
+        db/.style={cylinder, draw=dark, fill=#1, shape border rotate=90, aspect=0.3, minimum height=0.75cm, minimum width=1cm, align=center, font=\tiny},
         arr/.style={-{Stealth[length=2mm]}, thick, #1},
         phase/.style={font=\scriptsize\bfseries, #1}
     ]
         % Phase labels
-        \node[phase=primary] at (-5, 2.8) {OFFLINE};
-        \node[phase=secondary] at (3, 2.8) {ONLINE};
+        \node[phase=primary] at (-6, 3.2) {OFFLINE};
+        \node[phase=secondary] at (4, 3.2) {ONLINE};
         
-        % Offline Pipeline (Data Ingestion)
-        \node[box=gray!20, minimum width=1.4cm] (crawl) at (-5.5, 1.8) {Crawler};
-        \node[box=accent!20, minimum width=1.4cm] (chunk) at (-3.5, 1.8) {Chunker};
-        \node[box=purple!20, minimum width=1.4cm] (embed) at (-1.5, 1.8) {Embedder};
-        \node[db=blue!15] (qdrant) at (0.5, 1.8) {Qdrant};
+        % Offline Pipeline (Data Ingestion) - top row
+        \node[box=gray!20, minimum width=1.5cm] (crawl) at (-7, 2) {Crawler};
+        \node[box=accent!20, minimum width=1.5cm] (chunk) at (-4.5, 2) {Chunker};
+        \node[box=purple!20, minimum width=1.5cm] (embed) at (-2, 2) {Embedder};
+        \node[db=blue!15] (qdrant) at (0.5, 2) {Qdrant};
         
         \draw[arr=primary] (crawl) -- (chunk);
         \draw[arr=primary] (chunk) -- (embed);
         \draw[arr=primary] (embed) -- (qdrant);
         
         % Annotations
-        \node[below=0.08cm of crawl, font=\tiny, text=gray] {20K docs};
-        \node[below=0.08cm of chunk, font=\tiny, text=gray] {150K chunks};
-        \node[below=0.08cm of embed, font=\tiny, text=gray] {1024-dim};
+        \node[below=0.1cm of crawl, font=\tiny, text=gray] {20K docs};
+        \node[below=0.1cm of chunk, font=\tiny, text=gray] {150K chunks};
+        \node[below=0.1cm of embed, font=\tiny, text=gray] {1024-dim};
         
         % Online Pipeline - User icon
-        \node[circle, draw=dark, fill=gray!20, minimum size=0.45cm, font=\tiny] (user) at (-5.5, -0.5) {\textbf{U}};
-        \node[below=0.03cm of user, font=\tiny] {User};
+        \node[circle, draw=dark, fill=gray!20, minimum size=0.5cm, font=\tiny] (user) at (-7, -0.5) {\textbf{U}};
+        \node[below=0.05cm of user, font=\tiny] {User};
         
-        \node[box=primary!15, minimum width=1.6cm] (fe) at (-3.5, -0.5) {React UI};
-        \node[box=secondary!15, minimum width=1.6cm] (be) at (-1.5, -0.5) {FastAPI};
+        \node[box=primary!15, minimum width=1.7cm] (fe) at (-4.5, -0.5) {React UI};
+        \node[box=secondary!15, minimum width=1.7cm] (be) at (-2, -0.5) {FastAPI};
         
-        % RAG Pipeline box
-        \node[box=accent!15, minimum width=5cm, minimum height=1.4cm] (ragbox) at (3.5, -0.5) {};
-        \node[font=\footnotesize\bfseries] at (3.5, 0.15) {RAG Pipeline};
+        % RAG Pipeline box - wider and more spaced
+        \node[box=accent!15, minimum width=7.5cm, minimum height=1.6cm] (ragbox) at (4.5, -0.5) {};
+        \node[font=\footnotesize\bfseries] at (4.5, 0.25) {RAG Pipeline};
         
-        % Inside RAG - horizontal layout
-        \node[box=purple!20, minimum width=0.9cm, font=\tiny] (route) at (1.8, -0.7) {Route};
-        \node[box=blue!20, minimum width=0.9cm, font=\tiny] (retr) at (2.9, -0.7) {Retrieve};
-        \node[box=accent!30, minimum width=0.9cm, font=\tiny] (grade) at (4.0, -0.7) {Grade};
-        \node[box=secondary!20, minimum width=0.9cm, font=\tiny] (gen) at (5.1, -0.7) {Generate};
+        % Inside RAG - more spacing between components
+        \node[box=purple!20, minimum width=1.1cm, font=\tiny] (route) at (2, -0.7) {Route};
+        \node[box=blue!20, minimum width=1.1cm, font=\tiny] (retr) at (3.7, -0.7) {Retrieve};
+        \node[box=accent!30, minimum width=1.1cm, font=\tiny] (grade) at (5.4, -0.7) {Grade};
+        \node[box=secondary!20, minimum width=1.1cm, font=\tiny] (gen) at (7.1, -0.7) {Generate};
         
         \draw[-{Stealth[length=1.5mm]}, dark] (route) -- (retr);
         \draw[-{Stealth[length=1.5mm]}, dark] (retr) -- (grade);
         \draw[-{Stealth[length=1.5mm]}, dark] (grade) -- (gen);
         
-        % Connections
+        % User connections
         \draw[arr=primary] (user) -- (fe);
         \draw[arr=primary] (fe) -- (be);
         \draw[arr=primary] (be) -- (route);
         
-        % Qdrant to Retrieve connection
-        \draw[arr=primary, dashed] (qdrant) -- ++(0, -1.2) -| (retr);
+        % Qdrant to Retrieve - vertical then horizontal, avoiding overlap
+        \draw[arr=primary, dashed] (qdrant.south) -- ++(0, -0.8) -| (retr.north);
         
-        % LLM connection (simplified)
-        \node[db=accent!20] (llm) at (3.5, -2.3) {Gemini LLM};
-        \draw[arr=accent, dashed] (gen.south) -- ++(0, -0.3) -| (llm);
+        % LLM connection - positioned to the right, below Generate
+        \node[db=accent!20] (llm) at (7.1, -2.8) {Gemini LLM};
+        \draw[arr=accent, dashed] (gen.south) -- (llm.north);
         
         % Database
-        \node[db=gray!20] (sqlite) at (-1.5, -2.3) {SQLite};
+        \node[db=gray!20] (sqlite) at (-2, -2.8) {SQLite};
         \draw[arr=gray, dashed] (be) -- (sqlite);
-        \node[below=0.03cm of sqlite, font=\tiny] {Sessions};
+        \node[below=0.05cm of sqlite, font=\tiny] {Sessions};
         
-        % Response arrow (cleaner path)
-        \draw[arr=secondary] (gen.east) -- ++(0.5, 0) -- ++(0, 1.5) -| (fe.north);
+        % Response arrow - goes far right then up and back left to React UI
+        \draw[arr=secondary] (gen.east) -- ++(0.8, 0) -- ++(0, 2.3) -| (fe.north);
         
     \end{tikzpicture}
     \end{center}
     
-    \vspace{0.1cm}
+    \vspace{-0.1cm}
     \begin{center}
         \footnotesize
         \textcolor{primary}{\textbf{Key Components}}: Vietnamese-Embedding-v2 | Qdrant | LangGraph | Gemini 2.5 Flash
