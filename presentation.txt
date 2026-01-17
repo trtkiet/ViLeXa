@@ -178,7 +178,7 @@
         \node[below=0.05cm of sqlite, font=\tiny] {Sessions};
         
         % Response arrow - goes far right then up HIGH above top row, then back to React UI
-        \draw[arr=secondary] (gen.east) -- ++(0.8, 0) -- ++(0, 3.5) -| (fe.north);
+        \draw[arr=secondary] (gen.east) -- ++(1.0, 0) -- ++(0, 2.0) -| (fe.north);
         
     \end{tikzpicture}
     \end{center}
@@ -462,8 +462,8 @@
                 \node[left, font=\tiny] at (4.1, 2.7) {bge-reranker};
                 
                 % Optimal region - properly enclosed
-                \draw[best, thick, dashed] (-0.1, 2.85) rectangle (0.9, 3.35);
-                \node[font=\tiny, best, above] at (0.4, 3.35) {Optimal};
+                \draw[best, thick, dashed] (-0.1, 2.85) rectangle (0.6, 3.35);
+                \node[font=\tiny, best, above] at (0.6, 3.35) {Optimal};
                 
                 % Axis labels
                 \node[below, font=\tiny] at (0, -0.2) {0};
@@ -539,28 +539,28 @@
         box/.style={rectangle, draw=dark, fill=#1, rounded corners, minimum width=1.4cm, minimum height=0.45cm, align=center, font=\footnotesize},
         arr/.style={-{Stealth[length=2mm]}, thick}
     ]
-        % Traditional - centered at x=3
-        \node[font=\footnotesize\bfseries] at (-1.5, 0.5) {Traditional};
-        \node[box=gray!20] (q1) at (0.5, 0.5) {Query};
-        \node[box=purple!20] (ret1) at (2.5, 0.5) {Retrieve};
-        \node[box=blue!20] (gen1) at (4.5, 0.5) {Generate};
+        % Traditional - spaced out clearly
+        \node[font=\footnotesize\bfseries] at (-2, 0.5) {Traditional};
+        \node[box=gray!20] (q1) at (0, 0.5) {Query};
+        \node[box=purple!20] (ret1) at (3, 0.5) {Retrieve};
+        \node[box=blue!20] (gen1) at (6, 0.5) {Generate};
         \draw[arr] (q1) -- (ret1);
         \draw[arr] (ret1) -- (gen1);
         
-        % Self-Reflective - centered
-        \node[font=\footnotesize\bfseries, secondary] at (-1.5, -0.7) {Self-Reflective};
-        \node[box=gray!20] (q2) at (0.5, -0.7) {Query};
-        \node[box=accent!30] (route) at (2.0, -0.7) {Route};
-        \node[box=purple!20] (ret2) at (3.5, -0.7) {Retrieve};
-        \node[box=secondary!30] (grade) at (5.0, -0.7) {Grade};
-        \node[box=blue!20] (gen2) at (6.5, -0.7) {Generate};
+        % Self-Reflective - spread out more like Traditional row
+        \node[font=\footnotesize\bfseries, secondary] at (-2, -1.2) {Self-Reflective};
+        \node[box=gray!20] (q2) at (0, -1.2) {Query};
+        \node[box=accent!30] (route) at (2, -1.2) {Route};
+        \node[box=purple!20] (ret2) at (4, -1.2) {Retrieve};
+        \node[box=secondary!30] (grade) at (6, -1.2) {Grade};
+        \node[box=blue!20] (gen2) at (8, -1.2) {Generate};
         \draw[arr] (q2) -- (route);
         \draw[arr] (route) -- (ret2);
         \draw[arr] (ret2) -- (grade);
         \draw[arr] (grade) -- (gen2);
         
-        % Rewrite loop - below the boxes
-        \draw[arr, dashed] (grade.south) -- ++(0, -0.35) -| node[below, font=\tiny, pos=0.25] {rewrite} (ret2.south);
+        % Rewrite loop - go down clearly below the boxes
+        \draw[arr, dashed] (grade.south) -- ++(0, -0.8) -| node[below, font=\tiny, pos=0.25] {rewrite} (ret2.south);
     \end{tikzpicture}
     \end{center}
 \end{frame}
