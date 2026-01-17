@@ -37,7 +37,8 @@
 \subtitle{Vietnamese Legal eXpert Assistant}
 \author{
     \textbf{Nguyen My Thong} - 23521527 \\
-    \textbf{Tran Tuan Kiet} - 23520822
+    \textbf{Tran Tuan Kiet} - 23520822 \\[0.3cm]
+    \small Instructor: \textbf{Dang Van Thin}
 }
 \institute[UIT]{
     CS311.Q11 - AI Programming Techniques \\
