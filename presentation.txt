@@ -414,7 +414,7 @@
 \begin{frame}{Reranker Evaluation: Is It Worth the Cost?}
     \textbf{Question}: Does cross-encoder reranking improve retrieval quality?
     
-    \vspace{0.3cm}
+    \vspace{0.2cm}
     \begin{columns}[T]
         \begin{column}{0.55\textwidth}
             \begin{center}
@@ -423,19 +423,20 @@
                 \toprule
                 \textbf{Configuration} & \textbf{Hit@1} & \textbf{Hit@3} & \textbf{Hit@5} & \textbf{Latency} \\
                 \midrule
-                \rowcolor{best!20} Dense Only & \textbf{0.773} & \textbf{0.900} & \textbf{0.947} & \textbf{0.13s} \\
+                Dense Only & 0.773 & 0.900 & 0.947 & \textbf{0.13s} \\
                 + bge-reranker-v2-m3 & 0.673 & 0.853 & 0.940 & 22.44s \\
                 + gte-multi-reranker & 0.520 & 0.867 & 0.913 & 8.36s \\
+                \rowcolor{best!20} + Vietnamese-Reranker & \textbf{0.827} & \textbf{0.907} & \textbf{0.947} & 23.22s \\
                 \bottomrule
             \end{tabular}
             \end{center}
             
-            \vspace{0.3cm}
-            \textbf{Surprising Finding}:
+            \vspace{0.2cm}
+            \textbf{Key Findings}:
             \begin{itemize}
-                \item[\textcolor{danger}{$\times$}] Rerankers \textbf{decrease} Hit@1 by 10-25\%
-                \item[\textcolor{danger}{$\times$}] Latency increases \textbf{170x} (0.13s $\rightarrow$ 22s)
-                \item[\textcolor{best}{\checkmark}] Vietnamese-Embedding already well-calibrated
+                \item[\textcolor{danger}{$\times$}] General rerankers \textbf{hurt} Hit@1 (-10 to -25\%)
+                \item[\textcolor{best}{\checkmark}] Vietnamese-Reranker \textbf{best} (+7\% Hit@1)
+                \item[\textcolor{accent}{!}] But latency: 0.13s $\rightarrow$ 23s (\textbf{178x})
             \end{itemize}
         \end{column}
         
@@ -452,40 +453,43 @@
                 }
                 
                 % Points
-                \fill[best!80] (0.3, 3.1) circle (4pt);
+                \fill[primary!80] (0.3, 3.1) circle (4pt);
                 \node[right, font=\tiny] at (0.5, 3.1) {No Reranker};
                 
-                \fill[accent!80] (2.0, 2.1) circle (4pt);
-                \node[right, font=\tiny] at (2.1, 2.1) {gte-reranker};
+                \fill[danger!80] (2.0, 2.1) circle (4pt);
+                \node[right, font=\tiny] at (2.1, 2.1) {gte};
                 
-                \fill[danger!80] (4.2, 2.7) circle (4pt);
-                \node[left, font=\tiny] at (4.1, 2.7) {bge-reranker};
+                \fill[danger!80] (4.3, 2.7) circle (4pt);
+                \node[above, font=\tiny] at (4.3, 2.6) {bge};
                 
-                % Optimal region - properly enclosed
-                \draw[best, thick, dashed] (-0.1, 2.85) rectangle (0.6, 3.35);
-                \node[font=\tiny, best, above] at (0.6, 3.35) {Optimal};
+                \fill[best] (4.5, 3.3) circle (4pt);
+                \node[above, font=\tiny, best] at (4.5, 3.45) {Viet};
+                
+                % Tradeoff annotation
+                \draw[accent, thick, dashed, ->] (0.5, 3.2) -- (4.3, 3.5);
+                \node[font=\tiny, accent, above, rotate=3] at (2.4, 3.3) {+7\% but 178x slower};
                 
                 % Axis labels
                 \node[below, font=\tiny] at (0, -0.2) {0};
-                \node[below, font=\tiny] at (4.2, -0.2) {22};
+                \node[below, font=\tiny] at (4.5, -0.2) {23};
             \end{tikzpicture}
             \end{center}
             
-            \vspace{0.15cm}
+            \vspace{0.1cm}
             \begin{center}
             \fcolorbox{primary}{primary!10}{
                 \parbox{0.9\textwidth}{
                     \centering\footnotesize
-                    \textbf{Decision}: Skip reranker\\
-                    High-quality embedding sufficient
+                    \textbf{Decision}: No reranker (prod)\\
+                    Best accuracy/latency tradeoff
                 }
             }
             \end{center}
         \end{column}
     \end{columns}
     
-    \vspace{0.2cm}
-    \textbf{Interpretation}: General-purpose rerankers don't transfer well to Vietnamese legal domain
+    \vspace{0.15cm}
+    \textbf{Insight}: Language-specific reranker helps, but 178x latency cost not justified for real-time use
 \end{frame}
 
 % ========================================
