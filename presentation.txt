@@ -212,7 +212,7 @@
         
         % Annotations
         \node[below=0.1cm of crawl, font=\tiny, text=gray] {20K docs};
-        \node[below=0.1cm of chunk, font=\tiny, text=gray] {150K chunks};
+        \node[below=0.1cm of chunk, font=\tiny, text=gray] {273K chunks};
         \node[below=0.1cm of embed, font=\tiny, text=gray] {1024-dim};
         
         % Online Pipeline - User icon
@@ -332,7 +332,7 @@
             \fcolorbox{secondary}{secondary!10}{
                 \parbox{0.9\textwidth}{
                     \centering\footnotesize
-                    \textbf{20,410 docs} $\rightarrow$ \textbf{150K chunks}\\
+                    \textbf{20,410 docs} $\rightarrow$ \textbf{273K chunks}\\
                     Max 512 tokens | 50 token overlap
                 }
             }
@@ -971,7 +971,7 @@
         \begin{tabular}[t]{@{}l@{}}
             \checkmark\ \footnotesize Retrieval: 0.13s per query \\[0.1cm]
             \checkmark\ \footnotesize Generation: 3.05s (k=5) \\[0.1cm]
-            \checkmark\ \footnotesize 150K chunks indexed
+            \checkmark\ \footnotesize 273K chunks indexed
         \end{tabular}
     \end{tabular}
     \end{center}
