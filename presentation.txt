@@ -1,6 +1,6 @@
-% Vietnamese Law Assistant - Presentation Slides
-% Course: CS311.Q11 - Ky thuat lap trinh tri tue nhan tao
-% University: UIT - DHQG TP.HCM
+% ViLeXa - Vietnamese Legal eXpert Assistant
+% Presentation for CS311.Q11 - AI Programming Techniques
+% Maximum 20 slides, 15-20 minutes
 
 \documentclass[aspectratio=169]{beamer}
 \usetheme{Madrid}
@@ -12,577 +12,1060 @@
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{xcolor}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{colortbl}
 
 % TikZ Libraries
-\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc, fit, backgrounds}
 
 % Colors
 \definecolor{primary}{RGB}{37, 99, 235}
 \definecolor{secondary}{RGB}{16, 185, 129}
 \definecolor{accent}{RGB}{245, 158, 11}
 \definecolor{dark}{RGB}{30, 41, 59}
+\definecolor{best}{RGB}{34, 197, 94}
+\definecolor{danger}{RGB}{239, 68, 68}
+\definecolor{lightgray}{RGB}{243, 244, 246}
 
 % Remove navigation
 \setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}[frame number]
 
 % Title Info
-\title[VN Law Assistant]{\textbf{Vietnamese Law Assistant}}
-\subtitle{He thong Tra cuu va Tu van Phap luat Viet Nam}
+\title[ViLeXa]{\textbf{ViLeXa}}
+\subtitle{Vietnamese Legal eXpert Assistant}
 \author{
     \textbf{Nguyen My Thong} - 23521527 \\
     \textbf{Tran Tuan Kiet} - 23520822
 }
 \institute[UIT]{
-    CS311.Q11 - Ky thuat lap trinh tri tue nhan tao \\
-    Truong Dai hoc Cong nghe Thong tin - DHQG TP.HCM
+    CS311.Q11 - AI Programming Techniques \\
+    University of Information Technology - VNU-HCM
 }
-\date{\today}
+\date{January 2026}
 
 \begin{document}
 
-% ===== TITLE =====
+% ========================================
+% SLIDE 1: TITLE
+% ========================================
 \begin{frame}
     \titlepage
 \end{frame}
 
-% ===== OUTLINE =====
-\begin{frame}{Noi dung trinh bay}
-    \tableofcontents
-\end{frame}
-
-% ==========================================
-\section{Bai toan}
-% ==========================================
-
-\begin{frame}{Van de thuc te}
+% ========================================
+% SLIDE 2: PROBLEM - Why This Project?
+% ========================================
+\begin{frame}{The Problem: Why Legal AI is Hard}
     \begin{columns}[T]
-        \begin{column}{0.5\textwidth}
-            \textbf{\large Thach thuc:}
-            \begin{itemize}
-                \item \textbf{20,000+} van ban phap luat
-                \item Tim kiem thu cong \textbf{mat thoi gian}
-                \item Ngon ngu phap ly \textbf{kho hieu}
-                \item Nguoi dan \textbf{thieu kien thuc} phap luat
-            \end{itemize}
-        \end{column}
-        \begin{column}{0.5\textwidth}
-            \begin{center}
-            \begin{tikzpicture}[scale=0.8]
-                % Documents stack
-                \foreach \i in {0,0.15,0.3} {
-                    \draw[fill=gray!20, draw=dark] (\i, -\i) rectangle (3+\i, 3-\i);
-                }
-                % Lines on document
-                \foreach \y in {2.5, 2.2, 1.9, 1.6, 1.3, 1.0} {
-                    \draw[gray] (0.4, \y) -- (2.6, \y);
-                }
-                % Person with question
-                \draw[fill=primary!30] (5, 1.5) circle (0.5);
-                \draw[thick] (5, 0.8) -- (5, 0);
-                \draw[thick] (5, 0.6) -- (4.5, 0.2);
-                \draw[thick] (5, 0.6) -- (5.5, 0.2);
-                \node[text=accent, scale=1.5] at (5.8, 2.2) {?};
+        \begin{column}{0.48\textwidth}
+            \textbf{\large LLM Limitations}
+            \vspace{0.3cm}
+            
+            \begin{tikzpicture}[
+                problem/.style={rectangle, draw=danger, fill=danger!10, rounded corners, minimum width=4cm, minimum height=0.8cm, align=center, font=\small}
+            ]
+                \node[problem] (h) at (0, 2.4) {\textbf{Hallucination}};
+                \node[right=0.2cm of h, font=\tiny, text width=3cm] {Legal advice MUST be verifiable};
+                
+                \node[problem] (k) at (0, 1.2) {\textbf{Knowledge Cut-off}};
+                \node[right=0.2cm of k, font=\tiny, text width=3cm] {Laws update frequently};
+                
+                \node[problem] (d) at (0, 0) {\textbf{Domain Gap}};
+                \node[right=0.2cm of d, font=\tiny, text width=3cm] {Vietnamese legal terminology};
             \end{tikzpicture}
-            \end{center}
+        \end{column}
+        
+        \begin{column}{0.48\textwidth}
+            \textbf{\large RAG as Solution}
+            \vspace{0.3cm}
+            
+            \begin{tikzpicture}[
+                solution/.style={rectangle, draw=secondary, fill=secondary!10, rounded corners, minimum width=4cm, minimum height=0.8cm, align=center, font=\small}
+            ]
+                \node[solution] (s1) at (0, 2.4) {\textbf{Grounded Answers}};
+                \node[right=0.2cm of s1, font=\tiny, text width=3cm] {Cite specific Dieu, Khoan};
+                
+                \node[solution] (s2) at (0, 1.2) {\textbf{Dynamic Updates}};
+                \node[right=0.2cm of s2, font=\tiny, text width=3cm] {No retraining needed};
+                
+                \node[solution] (s3) at (0, 0) {\textbf{Source Attribution}};
+                \node[right=0.2cm of s3, font=\tiny, text width=3cm] {Traceable to documents};
+            \end{tikzpicture}
         \end{column}
     \end{columns}
-
-    \vspace{0.5cm}
-    \begin{block}{Nhu cau}
-        He thong \textbf{tu dong} tra loi cau hoi phap luat bang ngon ngu \textbf{de hieu}
-    \end{block}
-\end{frame}
-
-\begin{frame}{Muc tieu du an}
-    \begin{center}
-    \begin{tikzpicture}[
-        box/.style={rectangle, draw=dark, fill=#1, rounded corners, minimum width=2.5cm, minimum height=1cm, align=center},
-        arr/.style={-{Stealth[length=3mm]}, thick}
-    ]
-        % User question
-        \node[box=accent!20] (q) at (0,0) {Cau hoi\\nguoi dung};
-
-        % AI System
-        \node[box=primary!20, minimum width=3cm] (ai) at (5,0) {AI Assistant\\RAG Pipeline};
-
-        % Answer
-        \node[box=secondary!20, minimum width=3.5cm] (a) at (10.5,0) {Tra loi + Trich dan\\Dieu, Khoan, Diem};
-
-        % Arrows
-        \draw[arr] (q) -- (ai);
-        \draw[arr] (ai) -- (a);
-    \end{tikzpicture}
-    \end{center}
-
-    \vspace{0.8cm}
-    \begin{columns}[T]
-        \begin{column}{0.33\textwidth}
-            \centering
-            \textcolor{primary}{\textbf{Hoi dap tu nhien}}\\
-            \small Chatbot AI
-        \end{column}
-        \begin{column}{0.33\textwidth}
-            \centering
-            \textcolor{secondary}{\textbf{Tra cuu van ban}}\\
-            \small Tim kiem thong minh
-        \end{column}
-        \begin{column}{0.33\textwidth}
-            \centering
-            \textcolor{accent}{\textbf{Trich dan nguon}}\\
-            \small Dieu, Khoan, Diem
-        \end{column}
-    \end{columns}
-\end{frame}
-
-% ==========================================
-\section{Giai phap}
-% ==========================================
-
-\begin{frame}{Kien truc tong quan}
-    \begin{center}
-    \begin{tikzpicture}[
-        layer/.style={rectangle, draw=dark, fill=#1, rounded corners, minimum width=10cm, minimum height=1cm, align=center},
-        db/.style={cylinder, draw=dark, fill=#1, shape border rotate=90, aspect=0.3, minimum height=1.2cm, minimum width=1.5cm, align=center},
-        arr/.style={-{Stealth[length=2mm]}, thick}
-    ]
-        % Frontend
-        \node[layer=primary!15] (fe) at (0, 3) {\textbf{Frontend} - React + TypeScript};
-
-        % Backend
-        \node[layer=secondary!15] (be) at (0, 1.5) {\textbf{Backend} - FastAPI + Python};
-
-        % AI Layer
-        \node[layer=accent!15] (ai) at (0, 0) {\textbf{AI/ML} - RAG Pipeline (Embedding + Retrieval + LLM)};
-
-        % Databases
-        \node[db=purple!15] (qdrant) at (-3, -2) {\tiny Qdrant};
-        \node[below=0.1cm of qdrant, font=\tiny] {Vector DB};
-
-        \node[db=gray!20] (sqlite) at (0, -2) {\tiny SQLite};
-        \node[below=0.1cm of sqlite, font=\tiny] {User Data};
-
-        \node[db=blue!15] (docs) at (3, -2) {\tiny Docs};
-        \node[below=0.1cm of docs, font=\tiny] {20K+ Laws};
-
-        % Arrows
-        \draw[arr] (fe) -- (be);
-        \draw[arr] (be) -- (ai);
-        \draw[arr] (ai) -- (qdrant);
-        \draw[arr] (ai) -- (sqlite);
-        \draw[arr] (ai) -- (docs);
-    \end{tikzpicture}
-    \end{center}
-\end{frame}
-
-% ==========================================
-\section{RAG Pipeline}
-% ==========================================
-
-\begin{frame}{RAG - Retrieval-Augmented Generation}
-    \begin{center}
-    \begin{tikzpicture}[
-        box/.style={rectangle, draw=dark, fill=#1, rounded corners, minimum width=2cm, minimum height=0.9cm, align=center, font=\small},
-        arr/.style={-{Stealth[length=2mm]}, thick}
-    ]
-        % Pipeline steps
-        \node[box=accent!20] (q) at (0, 0) {Cau hoi};
-        \node[box=primary!20] (emb) at (3, 0) {Embedding\\{\tiny GTE Model}};
-        \node[box=purple!20] (ret) at (6, 0) {Retrieval\\{\tiny Qdrant}};
-        \node[box=gray!20] (ctx) at (9, 0) {Context\\{\tiny Top-K}};
-        \node[box=blue!20] (llm) at (12, 0) {Gemini\\{\tiny LLM}};
-
-        % Arrows
-        \draw[arr] (q) -- (emb);
-        \draw[arr] (emb) -- (ret);
-        \draw[arr] (ret) -- (ctx);
-        \draw[arr] (ctx) -- (llm);
-
-        % Vector DB below
-        \node[cylinder, draw=dark, fill=purple!10, shape border rotate=90, aspect=0.4, minimum height=1.5cm] (vdb) at (4.5, -2) {\tiny Vectors};
-        \draw[arr, dashed] (emb) -- (vdb);
-        \draw[arr, dashed] (vdb) -- (ret);
-
-        % Labels
-        \node[font=\tiny, primary] at (1.5, 0.7) {1. Encode};
-        \node[font=\tiny, purple] at (4.5, 0.7) {2. Search};
-        \node[font=\tiny, gray] at (7.5, 0.7) {3. Rank};
-        \node[font=\tiny, blue] at (10.5, 0.7) {4. Generate};
-    \end{tikzpicture}
-    \end{center}
-
-    \vspace{0.3cm}
-    \begin{block}{Tai sao RAG?}
-        \begin{itemize}
-            \item LLM \textbf{khong biet} luat Viet Nam cu the
-            \item RAG = Truy xuat tai lieu \textbf{thuc} + Sinh cau tra loi
-            \item Dam bao cau tra loi co \textbf{can cu phap ly}
-        \end{itemize}
-    \end{block}
-\end{frame}
-
-\begin{frame}{Hybrid Search - Tim kiem lai}
-    \begin{columns}[T]
-        \begin{column}{0.5\textwidth}
-            \begin{block}{Dense Embedding (Ngu nghia)}
-                \begin{itemize}
-                    \item Vector 768 chieu
-                    \item Cosine similarity
-                    \item ``nghi phep'' $\approx$ ``ngay nghi''
-                \end{itemize}
-            \end{block}
-            \begin{center}
-            \begin{tikzpicture}[scale=0.5]
-                \draw[->, thick, primary] (0,0) -- (2, 1.5);
-                \draw[->, secondary] (0,0) -- (2.1, 1.3);
-                \draw[->, gray] (0,0) -- (0.5, 2);
-                \draw[dashed, primary!30] (0,0) circle (2.2);
-                \node[font=\tiny] at (2.5, 1.5) {Query};
-                \node[font=\tiny] at (2.6, 1.1) {Doc1};
-            \end{tikzpicture}
-            \end{center}
-        \end{column}
-
-        \begin{column}{0.5\textwidth}
-            \begin{block}{Sparse Embedding (Tu khoa)}
-                \begin{itemize}
-                    \item Token weights
-                    \item Exact match
-                    \item ``Dieu 113'' = ``Dieu 113''
-                \end{itemize}
-            \end{block}
-            \begin{center}
-            \begin{tikzpicture}[scale=0.5]
-                \foreach \x/\h in {0/1.5, 0.6/0.3, 1.2/2, 1.8/0.5, 2.4/1.8} {
-                    \fill[purple!60] (\x, 0) rectangle (\x+0.4, \h);
-                }
-                \draw[->] (-0.2, 0) -- (3.2, 0);
-                \draw[->] (0, -0.2) -- (0, 2.5);
-                \node[font=\tiny] at (1.5, -0.5) {Token IDs};
-            \end{tikzpicture}
-            \end{center}
-        \end{column}
-    \end{columns}
-
+    
     \vspace{0.5cm}
     \begin{center}
-        \textbf{Dense + Sparse = Hybrid Search} (Ket hop ca 2)
+        \fcolorbox{primary}{primary!5}{
+            \parbox{0.85\textwidth}{
+                \centering
+                \textbf{Our Goal}: Build a Vietnamese legal QA system with \textbf{verifiable citations}
+            }
+        }
     \end{center}
 \end{frame}
 
-\begin{frame}{Embedding Model - GTE Multilingual}
-    \begin{columns}[T]
-        \begin{column}{0.5\textwidth}
-            \begin{center}
-            \begin{tikzpicture}[
-                box/.style={rectangle, draw=dark, fill=#1, rounded corners, minimum width=3.5cm, minimum height=0.8cm, align=center},
-                arr/.style={-{Stealth[length=2mm]}, thick}
-            ]
-                \node[box=gray!20] (input) at (0, 2) {``Quyen nghi phep...''};
-                \node[box=primary!20, minimum height=1.5cm] (gte) at (0, 0) {\textbf{GTE Model}\\{\tiny Alibaba-NLP}};
-                \node[box=secondary!20] (dense) at (-2, -2) {Dense\\{\tiny [0.12, ...]}};
-                \node[box=purple!20] (sparse) at (2, -2) {Sparse\\{\tiny \{142: 0.8\}}};
-
-                \draw[arr] (input) -- (gte);
-                \draw[arr] (gte) -- (dense);
-                \draw[arr] (gte) -- (sparse);
-            \end{tikzpicture}
-            \end{center}
-        \end{column}
-
-        \begin{column}{0.5\textwidth}
-            \begin{block}{Dac diem}
-                \begin{itemize}
-                    \item Ho tro tieng Viet
-                    \item 768 dimensions
-                    \item Dual encoder (Dense + Sparse)
-                    \item GPU optimized
-                    \item Max 8192 tokens
-                \end{itemize}
-            \end{block}
-        \end{column}
-    \end{columns}
+% ========================================
+% SLIDE 3: SYSTEM ARCHITECTURE (Full Pipeline)
+% ========================================
+\begin{frame}{System Architecture: End-to-End Pipeline}
+    \begin{center}
+    \begin{tikzpicture}[
+        scale=0.72,
+        transform shape,
+        box/.style={rectangle, draw=dark, fill=#1, rounded corners=3pt, minimum height=0.7cm, align=center, font=\footnotesize},
+        db/.style={cylinder, draw=dark, fill=#1, shape border rotate=90, aspect=0.3, minimum height=0.75cm, minimum width=1cm, align=center, font=\tiny},
+        arr/.style={-{Stealth[length=2mm]}, thick, #1},
+        phase/.style={font=\scriptsize\bfseries, #1}
+    ]
+        % Phase labels
+        \node[phase=primary] at (-6, 3.2) {OFFLINE};
+        \node[phase=secondary] at (4, 3.2) {ONLINE};
+        
+        % Offline Pipeline (Data Ingestion) - top row
+        \node[box=gray!20, minimum width=1.5cm] (crawl) at (-7, 2) {Crawler};
+        \node[box=accent!20, minimum width=1.5cm] (chunk) at (-4.5, 2) {Chunker};
+        \node[box=purple!20, minimum width=1.5cm] (embed) at (-2, 2) {Embedder};
+        \node[db=blue!15] (qdrant) at (0.5, 2) {Qdrant};
+        
+        \draw[arr=primary] (crawl) -- (chunk);
+        \draw[arr=primary] (chunk) -- (embed);
+        \draw[arr=primary] (embed) -- (qdrant);
+        
+        % Annotations
+        \node[below=0.1cm of crawl, font=\tiny, text=gray] {20K docs};
+        \node[below=0.1cm of chunk, font=\tiny, text=gray] {150K chunks};
+        \node[below=0.1cm of embed, font=\tiny, text=gray] {1024-dim};
+        
+        % Online Pipeline - User icon
+        \node[circle, draw=dark, fill=gray!20, minimum size=0.5cm, font=\tiny] (user) at (-7, -0.5) {\textbf{U}};
+        \node[below=0.05cm of user, font=\tiny] {User};
+        
+        \node[box=primary!15, minimum width=1.7cm] (fe) at (-4.5, -0.5) {React UI};
+        \node[box=secondary!15, minimum width=1.7cm] (be) at (-2, -0.5) {FastAPI};
+        
+        % RAG Pipeline box - wider and more spaced
+        \node[box=accent!15, minimum width=7.5cm, minimum height=2cm] (ragbox) at (4.5, -0.7) {};
+        \node[font=\footnotesize\bfseries] at (4.5, 0.15) {RAG Pipeline};
+        
+        % Inside RAG - more spacing between components, moved down
+        \node[box=purple!20, minimum width=1.1cm, font=\tiny] (route) at (2, -1) {Route};
+        \node[box=blue!20, minimum width=1.1cm, font=\tiny] (retr) at (3.7, -1) {Retrieve};
+        \node[box=accent!30, minimum width=1.1cm, font=\tiny] (grade) at (5.4, -1) {Grade};
+        \node[box=secondary!20, minimum width=1.1cm, font=\tiny] (gen) at (7.1, -1) {Generate};
+        
+        \draw[-{Stealth[length=1.5mm]}, dark] (route) -- (retr);
+        \draw[-{Stealth[length=1.5mm]}, dark] (retr) -- (grade);
+        \draw[-{Stealth[length=1.5mm]}, dark] (grade) -- (gen);
+        
+        % User connections
+        \draw[arr=primary] (user) -- (fe);
+        \draw[arr=primary] (fe) -- (be);
+        \draw[arr=primary] (be) -- (route);
+        
+        % Qdrant to Retrieve - goes down then right to Retrieve
+        \draw[arr=primary, dashed] (qdrant.south) -- ++(0, -1.1) -| (retr.north);
+        
+        % LLM connection - positioned to the right, below Generate
+        \node[db=accent!20] (llm) at (7.1, -3.2) {Gemini LLM};
+        \draw[arr=accent, dashed] (gen.south) -- (llm.north);
+        
+        % Database
+        \node[db=gray!20] (sqlite) at (-2, -3.2) {SQLite};
+        \draw[arr=gray, dashed] (be) -- (sqlite);
+        \node[below=0.05cm of sqlite, font=\tiny] {Sessions};
+        
+        % Response arrow - goes far right then up HIGH above top row, then back to React UI
+        \draw[arr=secondary] (gen.east) -- ++(1.0, 0) -- ++(0, 2.0) -| (fe.north);
+        
+    \end{tikzpicture}
+    \end{center}
+    
+    \vspace{-0.1cm}
+    \begin{center}
+        \footnotesize
+        \textcolor{primary}{\textbf{Key Components}}: Vietnamese-Embedding-v2 | Qdrant | LangGraph | Gemini 2.5 Flash
+    \end{center}
 \end{frame}
 
-% ==========================================
-\section{Xu ly du lieu}
-% ==========================================
-
-\begin{frame}{Cau truc van ban phap luat Viet Nam}
+% ========================================
+% SLIDE 4: DATA PREPROCESSING
+% ========================================
+\begin{frame}{Data Preprocessing: Structure-Aware Chunking}
     \begin{columns}[T]
-        \begin{column}{0.5\textwidth}
-            \begin{center}
+        \begin{column}{0.45\textwidth}
+            \textbf{Vietnamese Legal Hierarchy}
+            \vspace{0.2cm}
+            
             \begin{tikzpicture}[
-                level/.style={rectangle, draw=dark, fill=#1, rounded corners, minimum width=3cm, minimum height=0.7cm, align=center}
+                level/.style={rectangle, draw=dark, fill=#1, rounded corners, minimum width=3cm, minimum height=0.55cm, align=center, font=\small}
             ]
-                \node[level=primary!30] (p) at (0, 4) {\textbf{PHAN I}};
-                \node[level=primary!20] (c) at (0, 3) {\textbf{Chuong I}};
-                \node[level=primary!10] (m) at (0, 2) {\textbf{Muc 1}};
-                \node[level=secondary!20] (d) at (0, 1) {\textbf{Dieu 5}};
-                \node[level=secondary!10] (k) at (0, 0) {\textbf{Khoan 1}};
-                \node[level=gray!20] (di) at (0, -1) {\textbf{Diem a}};
-
+                \node[level=primary!30] (p) at (0, 3) {PHAN (Part)};
+                \node[level=primary!20] (c) at (0, 2.1) {Chuong (Chapter)};
+                \node[level=primary!10] (m) at (0, 1.2) {Muc (Section)};
+                \node[level=secondary!40] (d) at (0, 0.3) {\textbf{Dieu (Article)}};
+                
                 \draw[->, thick, gray] (p) -- (c);
                 \draw[->, thick, gray] (c) -- (m);
                 \draw[->, thick, gray] (m) -- (d);
-                \draw[->, thick, gray] (d) -- (k);
-                \draw[->, thick, gray] (k) -- (di);
+                
+                % Highlight chunk unit
+                \draw[thick, accent, dashed] (-1.7, 0) rectangle (1.7, 0.6);
+                \node[font=\tiny, accent, right] at (1.8, 0.3) {Chunk Unit};
+            \end{tikzpicture}
+            
+            \vspace{0.3cm}
+            \textbf{Why Article-Level?}
+            \begin{itemize}
+                \item[\checkmark] \footnotesize Semantic completeness
+                \item[\checkmark] \footnotesize Natural legal boundaries
+                \item[\checkmark] \footnotesize Direct citation mapping
+            \end{itemize}
+        \end{column}
+        
+        \begin{column}{0.52\textwidth}
+            \textbf{Chunk with Context Header}
+            \vspace{0.2cm}
+            
+            \fcolorbox{dark}{lightgray}{
+                \parbox{0.95\textwidth}{
+                    \ttfamily\tiny
+                    \textcolor{primary}{[Chuong I | Muc 1 | Dieu 15]}\\[0.1cm]
+                    Dieu 15. Dieu kien kinh doanh\\
+                    1. To chuc, ca nhan kinh doanh phai...\\
+                    2. Truong hop kinh doanh nganh...
+                }
+            }
+            
+            \vspace{0.3cm}
+            \textbf{Preserved Metadata}
+            \vspace{0.1cm}
+            
+            \footnotesize
+            \begin{tabular}{ll}
+                \texttt{document\_id} & Law identifier \\
+                \texttt{document\_type} & Luat, Nghi dinh... \\
+                \texttt{phan, chuong, muc} & Hierarchy path \\
+                \texttt{dieu} & Article reference \\
+            \end{tabular}
+            
+            \vspace{0.3cm}
+            \begin{center}
+            \fcolorbox{secondary}{secondary!10}{
+                \parbox{0.9\textwidth}{
+                    \centering\footnotesize
+                    \textbf{20,410 docs} $\rightarrow$ \textbf{150K chunks}\\
+                    Max 512 tokens | 50 token overlap
+                }
+            }
+            \end{center}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% ========================================
+% SLIDE 5: RAG OPTIONS (Architecture Choices)
+% ========================================
+\begin{frame}{RAG Architecture: Design Decisions}
+    \begin{center}
+        \textbf{Every component has multiple options - we evaluate each systematically}
+    \end{center}
+    
+    \vspace{0.3cm}
+    \begin{tikzpicture}[
+        component/.style={rectangle, draw=dark, fill=#1, rounded corners, minimum width=2.8cm, minimum height=1.2cm, align=center},
+        option/.style={font=\tiny, align=left}
+    ]
+        % Components
+        \node[component=primary!20] (emb) at (0, 0) {\textbf{Embedding}\\Model};
+        \node[component=accent!20] (retr) at (4, 0) {\textbf{Retrieval}\\Strategy};
+        \node[component=purple!20] (rerank) at (8, 0) {\textbf{Reranker}\\(Optional)};
+        \node[component=secondary!20] (arch) at (12, 0) {\textbf{RAG}\\Architecture};
+        
+        % Options
+        \node[option, below=0.3cm of emb] {
+            \textbullet\ GTE-multilingual\\
+            \textbullet\ BGE-M3\\
+            \textbullet\ \textcolor{best}{\textbf{Vietnamese-Emb-v2}}
+        };
+        
+        \node[option, below=0.3cm of retr] {
+            \textbullet\ Dense only\\
+            \textbullet\ Sparse only\\
+            \textbullet\ Hybrid (D+S)
+        };
+        
+        \node[option, below=0.3cm of rerank] {
+            \textbullet\ None\\
+            \textbullet\ bge-reranker\\
+            \textbullet\ gte-reranker
+        };
+        
+        \node[option, below=0.3cm of arch] {
+            \textbullet\ Traditional RAG\\
+            \textbullet\ \textcolor{best}{\textbf{Self-Reflective}}
+        };
+        
+        % Arrows
+        \draw[-{Stealth}, thick] (emb) -- (retr);
+        \draw[-{Stealth}, thick] (retr) -- (rerank);
+        \draw[-{Stealth}, thick] (rerank) -- (arch);
+    \end{tikzpicture}
+    
+    \vspace{0.5cm}
+    \begin{center}
+    \fcolorbox{dark}{lightgray}{
+        \parbox{0.8\textwidth}{
+            \centering\small
+            \textbf{Methodology}: Each decision backed by quantitative evaluation\\
+            150 queries | Zalo AI Legal Benchmark | LLM-as-Judge
+        }
+    }
+    \end{center}
+\end{frame}
+
+% ========================================
+% SLIDE 6: EMBEDDING MODEL EVALUATION
+% ========================================
+\begin{frame}{Embedding Model Selection: Why Vietnamese-Specific?}
+    \vspace{-0.1cm}
+    \textbf{Hypothesis}: Domain-specific embedding outperforms multilingual for Vietnamese legal text
+    
+    \vspace{0.15cm}
+    \begin{columns}[T]
+        \begin{column}{0.55\textwidth}
+            \scriptsize
+            \begin{tabular}{l|ccc|ccc}
+                \toprule
+                \multirow{2}{*}{\textbf{Model}} & \multicolumn{3}{c|}{\textbf{Hit Rate}} & \multicolumn{3}{c}{\textbf{F1 Score}} \\
+                 & @1 & @5 & @10 & @1 & @5 & @10 \\
+                \midrule
+                GTE Dense & .513 & .827 & .873 & .513 & .276 & .159 \\
+                GTE Sparse & .440 & .720 & .800 & .440 & .240 & .146 \\
+                GTE Hybrid & .527 & .793 & .880 & .527 & .264 & .160 \\
+                \midrule
+                BGE-M3 Dense & .547 & .847 & .867 & .547 & .282 & .158 \\
+                BGE-M3 Sparse & .493 & .793 & .873 & .493 & .264 & .159 \\
+                BGE-M3 Hybrid & .580 & .820 & .900 & .580 & .273 & .164 \\
+                \midrule
+                \rowcolor{best!20} \textbf{Viet-Emb Dense} & \textbf{.773} & \textbf{.947} & \textbf{.953} & \textbf{.773} & \textbf{.315} & \textbf{.173} \\
+                \bottomrule
+            \end{tabular}
+            
+            \vspace{0.3cm}
+            \textbf{Key Insight}: Language-specific fine-tuning\\
+            outperforms hybrid retrieval for Vietnamese legal domain
+        \end{column}
+        
+        \begin{column}{0.42\textwidth}
+            \begin{center}
+            \begin{tikzpicture}[scale=0.85]
+                % Bar chart
+                \draw[->] (0, 0) -- (0, 3.8);
+                \draw[->] (0, 0) -- (4, 0);
+                \node[above, font=\tiny] at (0, 3.8) {Hit@1};
+                
+                % Y-axis labels
+                \node[left, font=\tiny] at (0, 2.2) {0.5};
+                \node[left, font=\tiny] at (0, 3.5) {0.8};
+                \draw[gray!30] (0, 2.2) -- (3.5, 2.2);
+                \draw[gray!30] (0, 3.5) -- (3.5, 3.5);
+                
+                % Bars (scaled)
+                \fill[primary!60] (0.3, 0) rectangle (0.9, 2.3);
+                \fill[accent!60] (1.2, 0) rectangle (1.8, 2.55);
+                \fill[best] (2.1, 0) rectangle (2.7, 3.4);
+                
+                % Labels
+                \node[below, font=\tiny] at (0.6, 0) {GTE};
+                \node[below, font=\tiny] at (1.5, 0) {BGE};
+                \node[below, font=\tiny] at (2.4, 0) {Viet};
+                
+                % Values on bars
+                \node[above, font=\tiny] at (0.6, 2.3) {.53};
+                \node[above, font=\tiny] at (1.5, 2.55) {.58};
+                \node[above, font=\tiny, best] at (2.4, 3.4) {\textbf{.77}};
+                
+                % Arrow
+                \draw[thick, danger, -{Stealth}] (3.1, 2.55) -- (3.1, 3.4);
+                \node[right, font=\tiny, danger] at (3.1, 3.0) {\textbf{+33\%}};
+            \end{tikzpicture}
+            \end{center}
+            
+            \vspace{0.15cm}
+            \begin{center}
+            \fcolorbox{best}{best!10}{
+                \parbox{0.88\textwidth}{
+                    \centering\footnotesize
+                    \textbf{Winner}: Vietnamese-Embedding-v2\\
+                    77.3\% vs 58.0\% (BGE Hybrid)
+                }
+            }
+            \end{center}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% ========================================
+% SLIDE 7: RERANKER EVALUATION
+% ========================================
+\begin{frame}{Reranker Evaluation: Is It Worth the Cost?}
+    \textbf{Question}: Does cross-encoder reranking improve retrieval quality?
+    
+    \vspace{0.3cm}
+    \begin{columns}[T]
+        \begin{column}{0.55\textwidth}
+            \begin{center}
+            \scriptsize
+            \begin{tabular}{l|ccc|c}
+                \toprule
+                \textbf{Configuration} & \textbf{Hit@1} & \textbf{Hit@3} & \textbf{Hit@5} & \textbf{Latency} \\
+                \midrule
+                \rowcolor{best!20} Dense Only & \textbf{0.773} & \textbf{0.900} & \textbf{0.947} & \textbf{0.13s} \\
+                + bge-reranker-v2-m3 & 0.673 & 0.853 & 0.940 & 22.44s \\
+                + gte-multi-reranker & 0.520 & 0.867 & 0.913 & 8.36s \\
+                \bottomrule
+            \end{tabular}
+            \end{center}
+            
+            \vspace{0.3cm}
+            \textbf{Surprising Finding}:
+            \begin{itemize}
+                \item[\textcolor{danger}{$\times$}] Rerankers \textbf{decrease} Hit@1 by 10-25\%
+                \item[\textcolor{danger}{$\times$}] Latency increases \textbf{170x} (0.13s $\rightarrow$ 22s)
+                \item[\textcolor{best}{\checkmark}] Vietnamese-Embedding already well-calibrated
+            \end{itemize}
+        \end{column}
+        
+        \begin{column}{0.42\textwidth}
+            \begin{center}
+            \begin{tikzpicture}[scale=0.72]
+                % Latency vs Accuracy tradeoff
+                \draw[->] (0, 0) -- (5, 0) node[right, font=\tiny] {Latency (s)};
+                \draw[->] (0, 0) -- (0, 4) node[above, font=\tiny] {Hit@1};
+                
+                % Grid
+                \foreach \y in {1, 2, 3} {
+                    \draw[gray!30] (0, \y) -- (4.5, \y);
+                }
+                
+                % Points
+                \fill[best!80] (0.3, 3.1) circle (4pt);
+                \node[right, font=\tiny] at (0.5, 3.1) {No Reranker};
+                
+                \fill[accent!80] (2.0, 2.1) circle (4pt);
+                \node[right, font=\tiny] at (2.1, 2.1) {gte-reranker};
+                
+                \fill[danger!80] (4.2, 2.7) circle (4pt);
+                \node[left, font=\tiny] at (4.1, 2.7) {bge-reranker};
+                
+                % Optimal region - properly enclosed
+                \draw[best, thick, dashed] (-0.1, 2.85) rectangle (0.6, 3.35);
+                \node[font=\tiny, best, above] at (0.6, 3.35) {Optimal};
+                
+                % Axis labels
+                \node[below, font=\tiny] at (0, -0.2) {0};
+                \node[below, font=\tiny] at (4.2, -0.2) {22};
+            \end{tikzpicture}
+            \end{center}
+            
+            \vspace{0.15cm}
+            \begin{center}
+            \fcolorbox{primary}{primary!10}{
+                \parbox{0.9\textwidth}{
+                    \centering\footnotesize
+                    \textbf{Decision}: Skip reranker\\
+                    High-quality embedding sufficient
+                }
+            }
+            \end{center}
+        \end{column}
+    \end{columns}
+    
+    \vspace{0.2cm}
+    \textbf{Interpretation}: General-purpose rerankers don't transfer well to Vietnamese legal domain
+\end{frame}
+
+% ========================================
+% SLIDE 8: PROBLEMS WITH TRADITIONAL RAG
+% ========================================
+\begin{frame}{RAG Challenges: Why Self-Reflective?}
+    \vspace{-0.15cm}
+    \textbf{Traditional RAG Failure Modes}:
+    
+    \vspace{0.1cm}
+    \begin{columns}[c]
+        \begin{column}{0.45\textwidth}
+            \begin{center}
+            \begin{tikzpicture}[
+                problem/.style={rectangle, draw=danger, fill=danger!10, rounded corners, minimum width=4cm, minimum height=0.5cm, align=center, font=\footnotesize}
+            ]
+                \node[problem] (p1) at (0, 2) {\textbf{Missing Content}};
+                \node[font=\tiny, below=0.01cm of p1] {No relevant docs $\rightarrow$ hallucination};
+                
+                \node[problem] (p2) at (0, 1) {\textbf{Missed Top-Ranked}};
+                \node[font=\tiny, below=0.01cm of p2] {Relevant doc ranked too low};
+                
+                \node[problem] (p3) at (0, 0) {\textbf{Wrong Context}};
+                \node[font=\tiny, below=0.01cm of p3] {Non-legal query gets retrieval};
             \end{tikzpicture}
             \end{center}
         \end{column}
+        
+        \begin{column}{0.45\textwidth}
+            \begin{center}
+            \begin{tikzpicture}[
+                solution/.style={rectangle, draw=secondary, fill=secondary!10, rounded corners, minimum width=4cm, minimum height=0.5cm, align=center, font=\footnotesize}
+            ]
+                \node[solution] (s1) at (0, 2) {\textbf{Document Grading}};
+                \node[font=\tiny, below=0.01cm of s1] {Filter irrelevant before generation};
+                
+                \node[solution] (s2) at (0, 1) {\textbf{Query Rewriting}};
+                \node[font=\tiny, below=0.01cm of s2] {Reformulate and retry (max 3x)};
+                
+                \node[solution] (s3) at (0, 0) {\textbf{Query Routing}};
+                \node[font=\tiny, below=0.01cm of s3] {Skip retrieval for chit-chat};
+            \end{tikzpicture}
+            \end{center}
+        \end{column}
+    \end{columns}
+    
+    \vspace{0.15cm}
+    \begin{center}
+    \begin{tikzpicture}[
+        scale=0.85,
+        box/.style={rectangle, draw=dark, fill=#1, rounded corners, minimum width=1.4cm, minimum height=0.45cm, align=center, font=\footnotesize},
+        arr/.style={-{Stealth[length=2mm]}, thick}
+    ]
+        % Traditional - spaced out clearly
+        \node[font=\footnotesize\bfseries] at (-2, 0.5) {Traditional};
+        \node[box=gray!20] (q1) at (0, 0.5) {Query};
+        \node[box=purple!20] (ret1) at (3, 0.5) {Retrieve};
+        \node[box=blue!20] (gen1) at (6, 0.5) {Generate};
+        \draw[arr] (q1) -- (ret1);
+        \draw[arr] (ret1) -- (gen1);
+        
+        % Self-Reflective - spread out more like Traditional row
+        \node[font=\footnotesize\bfseries, secondary] at (-2.2, -1.2) {Self-Reflective};
+        \node[box=gray!20] (q2) at (0, -1.2) {Query};
+        \node[box=accent!30] (route) at (3, -1.2) {Route};
+        \node[box=purple!20] (ret2) at (6, -1.2) {Retrieve};
+        \node[box=secondary!30] (grade) at (9, -1.2) {Grade};
+        \node[box=blue!20] (gen2) at (12, -1.2) {Generate};
+        \draw[arr] (q2) -- (route);
+        \draw[arr] (route) -- (ret2);
+        \draw[arr] (ret2) -- (grade);
+        \draw[arr] (grade) -- (gen2);
+        
+        % Rewrite loop - go down clearly below the boxes
+        \draw[arr, dashed] (grade.south) -- ++(0, -0.6) -| node[below, font=\tiny, pos=0.25] {rewrite} (ret2.south);
+    \end{tikzpicture}
+    \end{center}
+\end{frame}
 
-        \begin{column}{0.5\textwidth}
-            \begin{block}{Hierarchical Chunking}
-                \begin{itemize}
-                    \item Giu nguyen cau truc phan cap
-                    \item Moi chunk = 1 don vi logic
-                    \item Metadata day du
-                \end{itemize}
-            \end{block}
+% ========================================
+% SLIDE 9: SELF-REFLECTIVE RAG WORKFLOW
+% ========================================
+\begin{frame}{Self-Reflective RAG: LangGraph Implementation}
+    \begin{center}
+    \begin{tikzpicture}[
+        scale=0.65,
+        transform shape,
+        node/.style={rectangle, draw=dark, fill=#1, rounded corners, minimum width=2cm, minimum height=0.8cm, align=center, font=\small},
+        decision/.style={diamond, draw=dark, fill=#1, minimum width=1.4cm, minimum height=1.1cm, align=center, font=\tiny, aspect=1.5},
+        arr/.style={-{Stealth[length=2mm]}, thick}
+    ]
+        % Top row - spread out with spacing of 4.5
+        \node[node=gray!20] (query) at (0, 0) {User Query};
+        
+        \node[decision=accent!30] (route) at (4.5, 0) {Legal\\Query?};
+        \draw[arr] (query) -- (route);
+        
+        \node[node=purple!20] (retrieve) at (9, 0) {Retrieve\\(k=10)};
+        \draw[arr] (route) -- node[above, font=\tiny] {Yes} (retrieve);
+        
+        \node[decision=secondary!30] (grade) at (13.5, 0) {Relevant\\Docs?};
+        \draw[arr] (retrieve) -- (grade);
+        
+        \node[node=blue!20] (generate) at (18, 0) {Generate\\Answer};
+        \draw[arr] (grade) -- node[above, font=\tiny] {Yes} (generate);
+        
+        % Bottom row
+        \node[node=blue!15] (direct) at (4.5, -4.5) {Direct Answer};
+        \draw[arr] (route) -- node[right, font=\tiny] {No} (direct);
+        
+        \node[node=danger!20] (nodocs) at (9, -4.5) {No Info\\Available};
+        
+        \node[node=accent!20] (rewrite) at (13.5, -4.5) {Rewrite\\Query};
+        \draw[arr] (grade) -- node[right, font=\tiny] {No} (rewrite);
+        
+        \node[node=best!30] (output) at (18, -4.5) {Response\\+ Sources};
+        \draw[arr] (generate) -- (output);
+        
+        % Rewrite back to Retrieve - go UP then LEFT clearly above other elements
+        \draw[arr] (rewrite.north) -- ++(0, 1.5) -| node[above, font=\tiny, pos=0.25] {retry $\leq$ 3} (retrieve.south);
+        
+        % Rewrite to No Info (max retries) - goes LEFT
+        \draw[arr, dashed] (rewrite.west) -- node[above, font=\tiny] {max} (nodocs.east);
+        
+        % All outputs go to Response - each with its own clear path
+        % Direct Answer to Output - go DOWN first, then RIGHT along the very bottom
+        \draw[arr] (direct.south) -- ++(0, -1.2) -| (output.south west);
+        
+        % No Info to Output - go DOWN, then RIGHT 
+        \draw[arr] (nodocs.south) -- ++(0, -0.6) -| (output.south);
+        
+        % Rewrite to Output - direct horizontal arrow
+        \draw[arr] (rewrite.east) -- (output.west);
+        
+    \end{tikzpicture}
+    \end{center}
+    
+    \vspace{0.1cm}
+    \begin{center}
+    \footnotesize
+    \textbf{Key Features}: Query intent classification | Relevance grading | Adaptive retry | Graceful failure
+    \end{center}
+\end{frame}
 
+% ========================================
+% SLIDE 10: RAG ARCHITECTURE EVALUATION
+% ========================================
+\begin{frame}{RAG Evaluation: Traditional vs Self-Reflective}
+    \begin{columns}[T]
+        \begin{column}{0.55\textwidth}
+            \begin{center}
+            \textbf{Generation Quality Comparison}
+            \vspace{0.2cm}
+            
+            \small
+            \begin{tabular}{l|cccc}
+                \toprule
+                \textbf{Config} & \textbf{Time} & \textbf{Tokens} & \textbf{Rel.} & \textbf{Faith.} \\
+                \midrule
+                Trad. k=3 & 1.81s & 1550 & 0.781 & 0.904 \\
+                \rowcolor{best!20} \textbf{Trad. k=5} & \textbf{3.05s} & 2472 & \textbf{0.818} & \textbf{0.913} \\
+                \midrule
+                Self-R k=3 & 6.62s & 4069 & 0.784 & 0.912 \\
+                Self-R k=5 & 8.06s & 5736 & 0.785 & 0.902 \\
+                \bottomrule
+            \end{tabular}
+            \end{center}
+            
             \vspace{0.3cm}
-            \begin{exampleblock}{Metadata}
-                \small
-                \texttt{law\_id: "101873"}\\
-                \texttt{chapter: "Chuong I"}\\
-                \texttt{article: "Dieu 5"}\\
-                \texttt{clause: "1"}
-            \end{exampleblock}
+            \textbf{Key Findings}:
+            \begin{itemize}
+                \item[\textcolor{best}{\checkmark}] Traditional k=5 achieves \textbf{best quality}
+                \item[\textcolor{accent}{!}] Self-Reflective uses \textbf{3-4x more tokens}
+                \item[\textcolor{primary}{$\rightarrow$}] Larger context (k=5) improves relevancy
+            \end{itemize}
+        \end{column}
+        
+        \begin{column}{0.42\textwidth}
+            \begin{center}
+            \begin{tikzpicture}[scale=0.68]
+                % Relevancy chart
+                \node[font=\small\bfseries] at (2.8, 5.0) {Relevancy Score};
+                
+                \draw[->] (0, 0) -- (0, 4);
+                \draw[->] (0, 0) -- (5.5, 0);
+                
+                % Y-axis labels
+                \node[left, font=\tiny] at (0, 1.8) {0.78};
+                \node[left, font=\tiny] at (0, 3.2) {0.82};
+                \draw[gray!30] (0, 1.8) -- (5.2, 1.8);
+                \draw[gray!30] (0, 3.2) -- (5.2, 3.2);
+                
+                % Bars - normalized around 0.78-0.82 range
+                \fill[primary!50] (0.5, 0) rectangle (1.2, 2.2);
+                \node[below, font=\tiny] at (0.85, -0.1) {T-3};
+                \node[above, font=\tiny] at (0.85, 2.2) {.781};
+                
+                \fill[best] (1.6, 0) rectangle (2.3, 3.3);
+                \node[below, font=\tiny] at (1.95, -0.1) {T-5};
+                \node[above, font=\tiny, best] at (1.95, 3.3) {\textbf{.818}};
+                
+                \fill[accent!50] (2.7, 0) rectangle (3.4, 2.4);
+                \node[below, font=\tiny] at (3.05, -0.1) {S-3};
+                \node[above, font=\tiny] at (3.05, 2.4) {.784};
+                
+                \fill[accent!40] (3.8, 0) rectangle (4.5, 2.5);
+                \node[below, font=\tiny] at (4.15, -0.1) {S-5};
+                \node[above, font=\tiny] at (4.15, 2.5) {.785};
+                
+                % Best marker
+                \node[font=\tiny, best, above] at (1.95, 3.8) {Best};
+            \end{tikzpicture}
+            \end{center}
+            
+            \vspace{0.2cm}
+            \begin{center}
+            \fcolorbox{secondary}{secondary!10}{
+                \parbox{0.9\textwidth}{
+                    \centering\footnotesize
+                    \textbf{Recommendation}:\\
+                    Traditional RAG (k=5)\\
+                    for most queries
+                }
+            }
+            \end{center}
         \end{column}
     \end{columns}
 \end{frame}
 
-\begin{frame}{Data Pipeline}
+% ========================================
+% SLIDE 11: PASS RATE ANALYSIS
+% ========================================
+\begin{frame}{Detailed Quality Analysis: Pass Rates}
+    \begin{columns}[c]
+        \begin{column}{0.48\textwidth}
+            \begin{center}
+            \textbf{Pass Rate at Different Thresholds}
+            \vspace{0.15cm}
+            
+            \footnotesize
+            \begin{tabular}{l|ccc}
+                \toprule
+                & \multicolumn{3}{c}{\textbf{Relevancy Pass \%}} \\
+                \textbf{Config} & @0.5 & @0.7 & @0.9 \\
+                \midrule
+                Self-R k=3 & 84.2 & 69.9 & 56.2 \\
+                Self-R k=5 & 82.9 & 71.2 & 56.2 \\
+                Trad. k=3 & 82.9 & 74.0 & 56.2 \\
+                \rowcolor{best!20} \textbf{Trad. k=5} & \textbf{86.3} & \textbf{76.7} & \textbf{58.9} \\
+                \bottomrule
+            \end{tabular}
+            
+            \vspace{0.25cm}
+            
+            \footnotesize
+            \begin{tabular}{l|ccc}
+                \toprule
+                & \multicolumn{3}{c}{\textbf{Faithfulness Pass \%}} \\
+                \textbf{Config} & @0.5 & @0.7 & @0.9 \\
+                \midrule
+                Self-R k=3 & 93.8 & 90.4 & 80.8 \\
+                Self-R k=5 & 94.5 & 91.1 & 76.7 \\
+                \rowcolor{best!20} \textbf{Trad. k=3} & \textbf{95.9} & 89.0 & 75.3 \\
+                Trad. k=5 & 95.9 & 88.4 & 77.4 \\
+                \bottomrule
+            \end{tabular}
+            \end{center}
+        \end{column}
+        
+        \begin{column}{0.48\textwidth}
+            \begin{center}
+            \textbf{Interpretation}
+            \vspace{0.15cm}
+            
+            \begin{tikzpicture}[
+                insight/.style={rectangle, draw=#1, fill=#1!10, rounded corners, minimum width=4.2cm, minimum height=0.55cm, align=center, font=\footnotesize}
+            ]
+                \node[insight=best] (i1) at (0, 2.2) {86\% relevancy $\geq$ 0.5};
+                \node[insight=secondary] (i2) at (0, 1.3) {96\% faithfulness $\geq$ 0.5};
+                \node[insight=primary] (i3) at (0, 0.4) {Faithfulness $>$ Relevancy};
+            \end{tikzpicture}
+            
+            \vspace{0.25cm}
+            \fcolorbox{accent}{accent!10}{
+                \parbox{0.9\textwidth}{
+                    \centering\footnotesize
+                    \textbf{High Faithfulness} (96\%)\\
+                    = Low Hallucination Risk\\[0.05cm]
+                    Critical for legal domain
+                }
+            }
+            
+            \vspace{0.2cm}
+            \footnotesize
+            \textbf{Evaluation Method}:\\
+            LLM-as-Judge (Gemini) | DeepEval
+            \end{center}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% ========================================
+% SLIDE 12: EVALUATION METHODOLOGY
+% ========================================
+\begin{frame}{Evaluation Methodology}
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \textbf{Retrieval Metrics}
+            \vspace{0.2cm}
+            
+            \begin{tikzpicture}[
+                metric/.style={rectangle, draw=primary, fill=primary!10, rounded corners, minimum width=4.2cm, minimum height=0.6cm, align=left, font=\footnotesize}
+            ]
+                \node[metric] (m1) at (0, 2.4) {\textbf{Hit Rate @k}};
+                \node[font=\tiny, right=0.1cm of m1] {$\geq$1 relevant in top-k};
+                
+                \node[metric] (m2) at (0, 1.4) {\textbf{Precision @k}};
+                \node[font=\tiny, right=0.1cm of m2] {Relevant / Retrieved};
+                
+                \node[metric] (m3) at (0, 0.4) {\textbf{F1 Score @k}};
+                \node[font=\tiny, right=0.1cm of m3] {Harmonic mean};
+            \end{tikzpicture}
+            
+            \vspace{0.3cm}
+            \textbf{Generation Metrics}
+            \vspace{0.2cm}
+            
+            \begin{tikzpicture}[
+                metric/.style={rectangle, draw=secondary, fill=secondary!10, rounded corners, minimum width=4.2cm, minimum height=0.6cm, align=left, font=\footnotesize}
+            ]
+                \node[metric] (g1) at (0, 1.2) {\textbf{Relevancy}};
+                \node[font=\tiny, right=0.1cm of g1] {Addresses query?};
+                
+                \node[metric] (g2) at (0, 0.2) {\textbf{Faithfulness}};
+                \node[font=\tiny, right=0.1cm of g2] {Grounded in context?};
+            \end{tikzpicture}
+        \end{column}
+        
+        \begin{column}{0.48\textwidth}
+            \textbf{Evaluation Setup}
+            \vspace{0.2cm}
+            
+            \fcolorbox{dark}{lightgray}{
+                \parbox{0.95\textwidth}{
+                    \footnotesize
+                    \textbf{Dataset}: Zalo AI Legal Benchmark\\
+                    \textbf{Queries}: 150 legal questions\\
+                    \textbf{Types}: Factual, procedural, comparative\\
+                    \textbf{Judge}: Gemini (LLM-as-Judge)\\
+                    \textbf{Framework}: DeepEval
+                }
+            }
+            
+            \vspace{0.3cm}
+            \textbf{Experiment Coverage}
+            \vspace{0.2cm}
+            
+            \begin{tikzpicture}[
+                box/.style={rectangle, draw=dark, fill=#1, rounded corners, minimum width=2cm, minimum height=0.5cm, align=center, font=\tiny}
+            ]
+                \node[box=primary!20] at (0, 0.8) {7 Embedding};
+                \node[box=accent!20] at (2.3, 0.8) {4 Reranker};
+                \node[box=secondary!20] at (4.6, 0.8) {4 RAG};
+                
+                \node[font=\footnotesize, below] at (2.3, 0.2) {\textbf{= 2,250 evaluated retrievals}};
+            \end{tikzpicture}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% ========================================
+% SLIDE 13: TECHNOLOGY STACK
+% ========================================
+\begin{frame}{Technology Stack}
+    \vspace{-0.1cm}
     \begin{center}
     \begin{tikzpicture}[
-        box/.style={rectangle, draw=dark, fill=#1, rounded corners, minimum width=2.5cm, minimum height=1cm, align=center},
-        arr/.style={-{Stealth[length=2mm]}, thick}
+        layer/.style={rectangle, draw=dark, fill=#1, rounded corners, minimum width=11.5cm, minimum height=0.7cm, align=center, font=\small},
     ]
-        \node[box=gray!20] (raw) at (0, 0) {JSON Files\\{\tiny 20K+ docs}};
-        \node[box=accent!20] (chunk) at (4, 0) {Chunking\\{\tiny Hierarchical}};
-        \node[box=primary!20] (embed) at (8, 0) {Embedding\\{\tiny GTE Model}};
-        \node[box=purple!20] (store) at (12, 0) {Qdrant\\{\tiny Vectors}};
-
-        \draw[arr] (raw) -- node[above, font=\tiny] {Load} (chunk);
-        \draw[arr] (chunk) -- node[above, font=\tiny] {Split} (embed);
-        \draw[arr] (embed) -- node[above, font=\tiny] {Upload} (store);
+        \node[layer=primary!15] (fe) at (0, 2.5) {\textbf{Frontend}: React + TypeScript + TailwindCSS};
+        \node[layer=secondary!15] (be) at (0, 1.5) {\textbf{Backend}: FastAPI + SQLAlchemy + JWT Authentication};
+        \node[layer=accent!15] (ai) at (0, 0.5) {\textbf{RAG}: LangChain + LangGraph + Gemini 2.5 Flash Lite};
+        \node[layer=purple!15] (db) at (0, -0.5) {\textbf{Vector DB}: Qdrant + Vietnamese-Embedding-v2 (1024-dim)};
+        \node[layer=gray!15] (infra) at (0, -1.5) {\textbf{Infrastructure}: Docker Compose + NVIDIA GPU};
     \end{tikzpicture}
     \end{center}
-
-    \vspace{0.5cm}
-    \begin{columns}[T]
-        \begin{column}{0.5\textwidth}
-            \begin{block}{Nguon du lieu}
-                \begin{itemize}
-                    \item Cong thong tin phap luat
-                    \item 20,410 van ban
-                    \item 8 loai van ban
-                \end{itemize}
-            \end{block}
-        \end{column}
-        \begin{column}{0.5\textwidth}
-            \begin{block}{Vector Database}
-                \begin{itemize}
-                    \item Qdrant - Hybrid mode
-                    \item Dense + Sparse vectors
-                    \item Sub-100ms retrieval
-                \end{itemize}
-            \end{block}
-        \end{column}
-    \end{columns}
-\end{frame}
-
-% ==========================================
-\section{Tinh nang he thong}
-% ==========================================
-
-\begin{frame}{Tinh nang chinh}
-    \begin{columns}[T]
-        \begin{column}{0.33\textwidth}
-            \begin{block}{Chat AI}
-                \begin{itemize}
-                    \item Hoi dap tu nhien
-                    \item Luu lich su
-                    \item Multi-session
-                \end{itemize}
-            \end{block}
-        \end{column}
-        \begin{column}{0.33\textwidth}
-            \begin{block}{Tra cuu}
-                \begin{itemize}
-                    \item Tim kiem van ban
-                    \item Loc theo loai
-                    \item Pagination
-                \end{itemize}
-            \end{block}
-        \end{column}
-        \begin{column}{0.33\textwidth}
-            \begin{block}{Trich dan}
-                \begin{itemize}
-                    \item Nguon chinh xac
-                    \item Link den van ban
-                    \item Xuat PDF
-                \end{itemize}
-            \end{block}
-        \end{column}
-    \end{columns}
-
-    \vspace{0.5cm}
-    \begin{block}{Bao mat}
-        \begin{itemize}
-            \item Xac thuc JWT Token
-            \item Luu tru SQLite
-            \item Session management
-        \end{itemize}
-    \end{block}
-\end{frame}
-
-\begin{frame}{Demo - Giao dien Chat}
+    
+    \vspace{0.15cm}
     \begin{center}
-    \begin{tikzpicture}[scale=0.7]
-        % Window frame
-        \draw[rounded corners, fill=white, draw=dark, thick] (0, 0) rectangle (14, 8);
+    \begin{columns}[c]
+        \begin{column}{0.40\textwidth}
+            \centering
+            \textbf{Key Design Decisions}
+            \begin{itemize}
+                \setlength\itemsep{0.1em}
+                \item[\checkmark] \footnotesize Qdrant: native hybrid search
+                \item[\checkmark] \footnotesize LangGraph: stateful workflows
+                \item[\checkmark] \footnotesize Local GPU: fast embedding
+            \end{itemize}
+        \end{column}
+        \hspace{1.5cm}
+        \begin{column}{0.40\textwidth}
+            \centering
+            \textbf{Performance}
+            \begin{itemize}
+                \setlength\itemsep{0.1em}
+                \item[\checkmark] \footnotesize Retrieval: 0.13s per query
+                \item[\checkmark] \footnotesize Generation: 3.05s (k=5)
+                \item[\checkmark] \footnotesize 150K chunks indexed
+            \end{itemize}
+        \end{column}
+    \end{columns}
+    \end{center}
+\end{frame}
 
-        % Header
-        \fill[primary!20, rounded corners] (0.3, 7.2) rectangle (13.7, 7.7);
-        \node[font=\small\bfseries] at (7, 7.45) {Vietnamese Law Assistant};
-
-        % Sidebar
-        \fill[gray!10, rounded corners] (0.3, 0.3) rectangle (3.5, 7);
-        \node[font=\tiny\bfseries] at (1.9, 6.7) {Sessions};
-        \draw[gray] (0.5, 6.4) rectangle (3.3, 6);
-        \node[font=\tiny] at (1.9, 6.2) {Quyen lao dong};
-
-        % User message
-        \fill[primary!10, rounded corners] (4, 5.5) rectangle (10, 6.5);
-        \node[font=\tiny, text width=5.5cm] at (7, 6) {Quyen nghi phep cua nguoi lao dong?};
-
-        % AI response
-        \fill[secondary!10, rounded corners] (4, 2.5) rectangle (13.5, 5.2);
-        \node[font=\tiny, text width=8.5cm, align=left] at (8.75, 4) {
-            Theo \textbf{Dieu 113 Bo luat Lao dong}:\\
-            - Nghi 12 ngay lam viec/nam\\
-            - Tang theo tham nien
+% ========================================
+% SLIDE 14: KEY FINDINGS SUMMARY
+% ========================================
+\begin{frame}{Summary: Evidence-Based Decisions}
+    \begin{center}
+    \begin{tikzpicture}[
+        finding/.style={rectangle, draw=dark, fill=#1, rounded corners, minimum width=5.5cm, minimum height=1.5cm, align=center},
+        evidence/.style={font=\tiny, align=center}
+    ]
+        % Row 1
+        \node[finding=primary!15] (f1) at (0, 1.5) {
+            \textbf{Embedding Model}\\[0.1cm]
+            \footnotesize Vietnamese-Embedding-v2
         };
-        \node[font=\tiny, primary] at (6, 2.8) {[Xem nguon]};
+        \node[evidence, below=0.1cm of f1] {\textcolor{best}{+33\% Hit@1} vs BGE-M3 Hybrid};
+        
+        \node[finding=accent!15] (f2) at (6.5, 1.5) {
+            \textbf{Retrieval Strategy}\\[0.1cm]
+            \footnotesize Dense Only (no reranker)
+        };
+        \node[evidence, below=0.1cm of f2] {Reranker \textcolor{danger}{hurts} Hit@1 by 10-25\%};
+        
+        % Row 2
+        \node[finding=secondary!15] (f3) at (0, -1.5) {
+            \textbf{RAG Architecture}\\[0.1cm]
+            \footnotesize Traditional RAG (k=5)
+        };
+        \node[evidence, below=0.1cm of f3] {\textcolor{best}{0.818 Relevancy} | \textcolor{best}{0.913 Faithfulness}};
+        
+        \node[finding=purple!15] (f4) at (6.5, -1.5) {
+            \textbf{Self-Reflective RAG}\\[0.1cm]
+            \footnotesize For edge cases
+        };
+        \node[evidence, below=0.1cm of f4] {Query rewriting for ambiguous queries};
+        
+    \end{tikzpicture}
+    \end{center}
+    
+    \vspace{0.3cm}
+    \begin{center}
+    \fcolorbox{best}{best!10}{
+        \parbox{0.85\textwidth}{
+            \centering
+            \textbf{Best Configuration}: Vietnamese-Embedding-v2 + Dense Retrieval + Traditional RAG (k=5)\\
+            \footnotesize Hit@1: 77.3\% | Relevancy: 0.818 | Faithfulness: 0.913 | Latency: 3.05s
+        }
+    }
+    \end{center}
+\end{frame}
 
-        % Input box
-        \draw[gray, rounded corners] (4, 0.5) rectangle (12.5, 1.3);
-        \node[font=\tiny, gray] at (8, 0.9) {Nhap cau hoi...};
-        \fill[primary, rounded corners] (12.7, 0.6) rectangle (13.4, 1.2);
+% ========================================
+% SLIDE 15: LIMITATIONS & FUTURE WORK
+% ========================================
+\begin{frame}{Limitations \& Future Directions}
+    \begin{columns}[c]
+        \begin{column}{0.48\textwidth}
+            \begin{center}
+            \textbf{Current Limitations}
+            \vspace{0.15cm}
+            
+            \begin{tikzpicture}[
+                limit/.style={rectangle, draw=danger, fill=danger!10, rounded corners, minimum width=4.3cm, minimum height=0.5cm, align=center, font=\footnotesize}
+            ]
+                \node[limit] (l1) at (0, 2.4) {Evaluation set: 150 queries};
+                \node[limit] (l2) at (0, 1.6) {No Vietnamese legal LLM};
+                \node[limit] (l3) at (0, 0.8) {Single-hop reasoning only};
+                \node[limit] (l4) at (0, 0) {No temporal awareness};
+            \end{tikzpicture}
+            \end{center}
+        \end{column}
+        
+        \begin{column}{0.48\textwidth}
+            \begin{center}
+            \textbf{Future Directions}
+            \vspace{0.15cm}
+            
+            \begin{tikzpicture}[
+                future/.style={rectangle, draw=secondary, fill=secondary!10, rounded corners, minimum width=4.3cm, minimum height=0.5cm, align=center, font=\footnotesize}
+            ]
+                \node[future] (f1) at (0, 2.4) {Expand benchmark};
+                \node[future] (f2) at (0, 1.6) {Fine-tune legal embedding};
+                \node[future] (f3) at (0, 0.8) {Multi-hop reasoning};
+                \node[future] (f4) at (0, 0) {Temporal document filtering};
+            \end{tikzpicture}
+            \end{center}
+        \end{column}
+    \end{columns}
+    
+    \vspace{0.4cm}
+    \begin{center}
+    \fcolorbox{primary}{primary!10}{
+        \parbox{0.8\textwidth}{
+            \centering\footnotesize
+            \textbf{Key Insight}: Language-specific embedding yields greater returns\\
+            than complex agentic workflows for Vietnamese legal domain
+        }
+    }
+    \end{center}
+\end{frame}
+
+% ========================================
+% SLIDE 16: CONCLUSION
+% ========================================
+\begin{frame}{Conclusion}
+    \begin{center}
+        \Large\textbf{ViLeXa} - Vietnamese Legal eXpert Assistant
+    \end{center}
+    
+    \vspace{0.25cm}
+    \begin{columns}[c]
+        \begin{column}{0.48\textwidth}
+            \begin{center}
+            \textbf{Technical Contributions}
+            \end{center}
+            \begin{enumerate}
+                \item Hierarchical chunking preserving legal structure
+                \item Systematic embedding evaluation (+33\% improvement)
+                \item Self-reflective RAG with LangGraph
+            \end{enumerate}
+        \end{column}
+        
+        \begin{column}{0.48\textwidth}
+            \begin{center}
+            \textbf{Practical Outcomes}
+            \end{center}
+            \begin{enumerate}
+                \item End-to-end legal QA system
+                \item Evidence-based configuration
+                \item 96\% low-hallucination responses
+            \end{enumerate}
+        \end{column}
+    \end{columns}
+    
+    \vspace{0.4cm}
+    \begin{center}
+    \begin{tikzpicture}
+        \node[rectangle, draw=best, fill=best!15, rounded corners, minimum width=10cm, minimum height=1.1cm] {
+            \begin{tabular}{cccc}
+                \textbf{Hit@1} & \textbf{Relevancy} & \textbf{Faithfulness} & \textbf{Latency} \\
+                77.3\% & 0.818 & 0.913 & 3.05s
+            \end{tabular}
+        };
     \end{tikzpicture}
     \end{center}
 \end{frame}
 
-% ==========================================
-\section{Cong nghe su dung}
-% ==========================================
-
-\begin{frame}{Tech Stack}
-    \begin{center}
-    \begin{tabular}{lll}
-        \toprule
-        \textbf{Layer} & \textbf{Technology} & \textbf{Purpose} \\
-        \midrule
-        Frontend & React, TypeScript & User Interface \\
-                 & TailwindCSS & Styling \\
-        \midrule
-        Backend & FastAPI & REST API \\
-                & SQLAlchemy & ORM \\
-                & JWT & Authentication \\
-        \midrule
-        AI/ML & Google Gemini & LLM Generation \\
-              & GTE Multilingual & Embeddings \\
-              & LangChain & RAG Framework \\
-        \midrule
-        Database & Qdrant & Vector Store \\
-                 & SQLite & User Data \\
-        \midrule
-        Infra & Docker & Containerization \\
-              & NVIDIA GPU & Acceleration \\
-        \bottomrule
-    \end{tabular}
-    \end{center}
-\end{frame}
-
-% ==========================================
-\section{Ket qua va Huong phat trien}
-% ==========================================
-
-\begin{frame}{Ket qua dat duoc}
-    \begin{columns}[T]
-        \begin{column}{0.5\textwidth}
-            \begin{block}{Performance}
-                \begin{itemize}
-                    \item Response time: \textbf{2-6 giay}
-                    \item Retrieval: \textbf{<100ms}
-                    \item Documents: \textbf{20,410}
-                \end{itemize}
-            \end{block}
-        \end{column}
-        \begin{column}{0.5\textwidth}
-            \begin{block}{Features}
-                \begin{itemize}
-                    \item RAG Pipeline hoan chinh
-                    \item Hybrid Search hieu qua
-                    \item Trich dan nguon chinh xac
-                    \item Docker deployment
-                \end{itemize}
-            \end{block}
-        \end{column}
-    \end{columns}
-\end{frame}
-
-\begin{frame}{Huong phat trien}
-    \begin{columns}[T]
-        \begin{column}{0.5\textwidth}
-            \begin{block}{Ngan han}
-                \begin{itemize}
-                    \item Fine-tuning Legal LLM
-                    \item Voice input (Speech-to-text)
-                    \item Mobile app (React Native)
-                \end{itemize}
-            \end{block}
-        \end{column}
-        \begin{column}{0.5\textwidth}
-            \begin{block}{Dai han}
-                \begin{itemize}
-                    \item Analytics dashboard
-                    \item Multi-language support
-                    \item Cloud deployment
-                \end{itemize}
-            \end{block}
-        \end{column}
-    \end{columns}
-
-    \vspace{0.8cm}
-    \begin{center}
-    \begin{tikzpicture}[
-        box/.style={rectangle, draw=dark, fill=#1, rounded corners, minimum width=2.5cm, minimum height=0.8cm, align=center},
-        arr/.style={-{Stealth[length=2mm]}, thick}
-    ]
-        \node[box=secondary!30] (now) at (0,0) {\textbf{MVP}};
-        \node[box=primary!20] (v2) at (4,0) {\textbf{v2.0}};
-        \node[box=accent!20] (prod) at (8,0) {\textbf{Production}};
-        \draw[arr] (now) -- (v2);
-        \draw[arr] (v2) -- (prod);
-    \end{tikzpicture}
-    \end{center}
-\end{frame}
-
-% ===== THANK YOU =====
+% ========================================
+% SLIDE 17: THANK YOU
+% ========================================
 \begin{frame}
     \begin{center}
-        \Huge\textbf{Cam on!}
-
-        \vspace{1cm}
-        \Large\textcolor{primary}{Q \& A}
-
-        \vspace{1cm}
+        \Huge\textbf{Thank You!}
+        
+        \vspace{0.8cm}
+        \Large\textcolor{primary}{Questions?}
+        
+        \vspace{0.8cm}
         \normalsize
         \begin{tabular}{ll}
-            Email: & 23521527@gm.uit.edu.vn \\
-                   & 23520822@gm.uit.edu.vn \\
+            \textbf{Nguyen My Thong} & 23521527@gm.uit.edu.vn \\
+            \textbf{Tran Tuan Kiet} & 23520822@gm.uit.edu.vn \\
         \end{tabular}
+        
+        \vspace{0.5cm}
+        \textcolor{gray}{\small GitHub: github.com/trtkiet/ViLeXa}
     \end{center}
 \end{frame}
 

@@ -304,7 +304,7 @@ export const LookupPage: React.FC = () => {
           </div>
           <div class="content">${content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
           <div class="footer">
-            Xuất từ Vietnamese Law Assistant - ${new Date().toLocaleDateString('vi-VN')}
+            Xuất từ ViLeXa - ${new Date().toLocaleDateString('vi-VN')}
           </div>
         </body>
         </html>
@@ -582,8 +582,7 @@ export const LookupPage: React.FC = () => {
       {/* Header */}
       <header className="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-6 shrink-0 shadow-sm">
         <div className="flex items-center gap-3">
-          <span className="bg-slate-900 text-white px-2.5 py-1 rounded-lg text-sm font-bold tracking-wide">VLA</span>
-          <span className="font-semibold text-slate-800">Law Assistant</span>
+          <span className="bg-slate-900 text-white px-2.5 py-1 rounded-lg text-sm font-bold tracking-wide">ViLeXa</span>
         </div>
         <div className="flex items-center gap-4">
           <nav className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">

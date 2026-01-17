@@ -1,0 +1,466 @@
+%File: formatting-instructions-latex-2026.tex
+%release 2026.0
+\documentclass[letterpaper]{article} % DO NOT CHANGE THIS
+\usepackage{aaai2026}  % DO NOT CHANGE THIS
+\usepackage{times}  % DO NOT CHANGE THIS
+\usepackage{helvet}  % DO NOT CHANGE THIS
+\usepackage{courier}  % DO NOT CHANGE THIS
+\usepackage[hyphens]{url}  % DO NOT CHANGE THIS
+\usepackage{graphicx} % DO NOT CHANGE THIS
+\urlstyle{rm} % DO NOT CHANGE THIS
+\def\UrlFont{\rm}  % DO NOT CHANGE THIS
+\usepackage{natbib}  % DO NOT CHANGE THIS AND DO NOT ADD ANY OPTIONS TO IT
+\usepackage{caption} % DO NOT CHANGE THIS AND DO NOT ADD ANY OPTIONS TO IT
+\frenchspacing  % DO NOT CHANGE THIS
+\setlength{\pdfpagewidth}{8.5in}  % DO NOT CHANGE THIS
+\setlength{\pdfpageheight}{11in}  % DO NOT CHANGE THIS
+%
+% These are recommended to typeset algorithms but not required. See the subsubsection on algorithms. Remove them if you don't have algorithms in your paper.
+\usepackage{algorithm}
+\usepackage{algorithmic}
+
+%
+% These are are recommended to typeset listings but not required. See the subsubsection on listing. Remove this block if you don't have listings in your paper.
+\usepackage{newfloat}
+\usepackage{listings}
+\DeclareCaptionStyle{ruled}{labelfont=normalfont,labelsep=colon,strut=off} % DO NOT CHANGE THIS
+\lstset{%
+	basicstyle={\footnotesize\ttfamily},% footnotesize acceptable for monospace
+	numbers=left,numberstyle=\footnotesize,xleftmargin=2em,% show line numbers, remove this entire line if you don't want the numbers.
+	aboveskip=0pt,belowskip=0pt,%
+	showstringspaces=false,tabsize=2,breaklines=true}
+\floatstyle{ruled}
+\newfloat{listing}{tb}{lst}{}
+\floatname{listing}{Listing}
+
+% Additional packages for tables
+\usepackage{booktabs}
+\usepackage{multirow}
+
+%
+% Keep the \pdfinfo as shown here. There's no need
+% for you to add the /Title and /Author tags.
+\pdfinfo{
+/TemplateVersion (2026.1)
+}
+
+% DISALLOWED PACKAGES
+% \usepackage{authblk} -- This package is specifically forbidden
+% \usepackage{balance} -- This package is specifically forbidden
+% \usepackage{color (if used in text)
+% \usepackage{CJK} -- This package is specifically forbidden
+% \usepackage{float} -- This package is specifically forbidden
+% \usepackage{flushend} -- This package is specifically forbidden
+% \usepackage{fontenc} -- This package is specifically forbidden
+% \usepackage{fullpage} -- This package is specifically forbidden
+% \usepackage{geometry} -- This package is specifically forbidden
+% \usepackage{grffile} -- This package is specifically forbidden
+% \usepackage{hyperref} -- This package is specifically forbidden
+% \usepackage{navigator} -- This package is specifically forbidden
+% (or any other package that embeds links such as navigator or hyperref)
+% \indentfirst} -- This package is specifically forbidden
+% \layout} -- This package is specifically forbidden
+% \multicol} -- This package is specifically forbidden
+% \nameref} -- This package is specifically forbidden
+% \usepackage{savetrees} -- This package is specifically forbidden
+% \usepackage{setspace} -- This package is specifically forbidden
+% \usepackage{stfloats} -- This package is specifically forbidden
+% \usepackage{tabu} -- This package is specifically forbidden
+% \usepackage{titlesec} -- This package is specifically forbidden
+% \usepackage{tocbibind} -- This package is specifically forbidden
+% \usepackage{ulem} -- This package is specifically forbidden
+% \usepackage{wrapfig} -- This package is specifically forbidden
+% DISALLOWED COMMANDS
+% \nocopyright -- Your paper will not be published if you use this command
+% \addtolength -- This command may not be used
+% \balance -- This command may not be used
+% \baselinestretch -- Your paper will not be published if you use this command
+% \clearpage -- No page breaks of any kind may be used for the final version of your paper
+% \columnsep -- This command may not be used
+% \newpage -- No page breaks of any kind may be used for the final version of your paper
+% \pagebreak -- No page breaks of any kind may be used for the final version of your paperr
+% \pagestyle -- This command may not be used
+% \tiny -- This is not an acceptable font size.
+% \vspace{- -- No negative value may be used in proximity of a caption, figure, table, section, subsection, subsubsection, or reference
+% \vskip{- -- No negative value may be used to alter spacing above or below a caption, figure, table, section, subsection, subsubsection, or reference
+
+\setcounter{secnumdepth}{0} %May be changed to 1 or 2 if section numbers are desired.
+
+% The file aaai2026.sty is the style file for AAAI Press
+% proceedings, working notes, and technical reports.
+%
+
+% Title
+
+% Your title must be in mixed case, not sentence case.
+% That means all verbs (including short verbs like be, is, using,and go),
+% nouns, adverbs, adjectives should be capitalized, including both words in hyphenated terms, while
+% articles, conjunctions, and prepositions are lower case unless they
+% directly follow a colon or long dash
+\title{CS311 Final Report \\ 
+ViLeXa: Vietnamese Legal Question Answering System with \\ Self-Reflective Retrieval-Augmented Generation}
+\author{
+    %Authors
+    % All authors must be in the same font size and format.
+    Tran Tuan Kiet\textsuperscript{\rm 1},
+    Nguyen My Thong\textsuperscript{\rm 1}
+}
+\affiliations{
+    %Afiliations
+    \textsuperscript{\rm 1}University of Information Technology, Ho Chi Minh City, Vietnam\\
+}
+
+% REMOVE THIS: bibentry
+% This is only needed to show inline citations in the guidelines document. You should not need it and can safely delete it.
+\usepackage{bibentry}
+% END REMOVE bibentry
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Legal question answering systems require accurate retrieval of relevant legal provisions and faithful generation of respon	Legal question answering systems require accurate retrieval of relevant legal provisions and faithful generation of responses grounded in authoritative sources. This project presents ViLeXa, a Vietnamese Legal Question Answering system that combines Retrieval-Augmented Generation (RAG) with self-reflective mechanisms to improve response quality. Our system features three key components: (1) a hierarchical chunking strategy that preserves the structural organization of Vietnamese legal documents (Phan, Chuong, Muc, Dieu), (2) a Vietnamese-optimized embedding model achieving 77.3\% Hit Rate@1 on the Zalo AI Legal Retrieval benchmark, and (3) a self-reflective RAG pipeline built with LangGraph that implements query routing, document grading, and adaptive query rewriting. Experimental results on 150 legal queries demonstrate that our traditional RAG pipeline with $k=5$ context documents achieves the best answer relevancy score of 0.818 while maintaining 91.3\% faithfulness. The self-reflective approach shows comparable quality with additional overhead, suggesting its value for complex queries requiring iterative refinement.
+s block between (not within) the abstract and the main body of the paper.
+\end{abstract}
+\begin{links}
+	\link{Code}{https://github.com/trtkiet/ViLeXa}
+	% \link{Datasets}{https://aaai.org/example/datasets}
+	% \link{Extended version}{https://aaai.org/example/extended-version}
+\end{links}
+
+\section{Introduction}
+
+Access to legal information is fundamental to the rule of law, yet navigating the vast landscape of Vietnamese legislation remains a significant challenge for citizens and legal professionals alike. The legal system is comprised of an extensive array of documents—including laws, decrees, circulars, and ordinances—defined by complex hierarchical structures and specialized terminology that often make manual research both time-consuming and prone to error.
+
+While recent breakthroughs in Large Language Models and Retrieval-Augmented Generation offer exciting potential for automated legal assistance, applying them to Vietnamese law remains complex due to the intricate structural and linguistic nature of the source material. Successfully navigating this domain requires overcoming significant hurdles related to preserving the context of highly organized documents, accurately interpreting specialized terminology, and ensuring that information retrieval systems are robust enough to handle the unique demands of legal queries.
+
+This report details the development of ViLeXa (Vietnamese Legal Expert Assistant), a system engineered to bridge this gap. ViLeXa moves beyond standard retrieval methods by implementing a domain-specific pipeline that includes:
+
+\begin{enumerate}
+	\item Automated data collection from the Vietnamese Legal Portal\footnote{\url{https://vbpl.vn/}}.
+	\item Structure-aware hierarchical chunking.
+	\item Hybrid retrieval using sparse and dense embeddings optimized for Vietnamese.
+	\item Two RAG architectures: a traditional pipeline and a self-reflective pipeline with query routing, document grading, and adaptive rewriting
+\end{enumerate}
+
+While the current iteration of ViLeXa demonstrates the viability of our domain-specific approach, achieving human-level legal reasoning remains an ongoing challenge. The system establishes a strong functional baseline, yet our testing reveals distinct limitations in handling edge cases and highly ambiguous queries. We present these findings not only to validate our architectural choices but also to clearly define the roadmap for the necessary optimizations required for real-world deployment.
+
+\section{Related Works}
+
+\subsection{Retrieval-Augmented Generation}
+
+Retrieval-Augmented Generation (RAG) was introduced to address the knowledge limitations of large language models by grounding generation in retrieved documents \cite{lewis2020retrieval}. The standard RAG pipeline consists of three stages: indexing documents into a vector store, retrieving relevant passages given a query, and generating responses conditioned on the retrieved context. This approach has been widely adopted for knowledge-intensive tasks including question answering, fact verification, and dialogue systems.
+
+\subsection{Agentic and Self-Reflective RAG}
+
+Recent work has extended RAG with agentic capabilities that enable dynamic decision-making during retrieval and generation \cite{asai2023selfraglearningretrievegenerate, yan2024correctiveretrievalaugmentedgeneration}. These approaches introduce mechanisms for:
+\begin{itemize}
+	\item \textbf{Query Routing}: Deciding whether retrieval is necessary for a given query 
+	\item \textbf{Document Grading}: Evaluating the relevance of retrieved documents before generation
+	\item \textbf{Query Rewriting}: Reformulating queries when initial retrieval fails to find relevant documents
+	\item \textbf{Response Validation}: Checking generated responses for hallucination and relevance
+\end{itemize}
+
+LangGraph\footnote{\url{https://www.langchain.com/langgraph}} provides a framework for building such agentic workflows as state machines, enabling complex multi-step reasoning with conditional branching.
+
+\subsection{Vietnamese Text Embeddings}
+
+Embedding models for Vietnamese have evolved from early multilingual models like mBERT to modern, versatile architectures. Notable advancements include gte-multilingual-base \cite{zhang2024mgte}, which serves as a lightweight and efficient option, and BGE-M3 \cite{bge-m3}, which introduced a unified framework supporting dense, sparse (lexical), and multi-vector retrieval for over 100 languages. Leveraging the latter's architecture, Vietnamese-Embedding-v2 \cite{Vietnamese_Embedding} fine-tuned BGE-M3 to specifically optimize retrieval for the Vietnamese language.
+
+\subsection{Legal Question Answering}
+
+Developing Legal QA systems for Vietnam requires navigating unique challenges, such as complex hierarchical document structures, extensive cross-referencing between laws, and the strict necessity for precise source citation. Recent efforts have focused on adapting general NLP architectures to the specific nuances of the Vietnamese legal domain \cite{duong2014vietnameselegalqa,ba2024vietnameselegalinformationretrieval}. Significant progress in this area has been driven by competitions such as the Zalo AI Legal Text Retrieval challenge and the VLSP shared tasks which established standard benchmark datasets for evaluating retrieval and question-answering systems on Vietnamese legal documents.
+
+\section{Data Preparation}
+
+\subsection{Data Collection}
+
+We developed a web crawler to collect legal documents from the Vietnamese Legal Portal\footnote{\url{https://vbpl.vn/}}, the official government repository for legal documents. The collection process operates in two stages: first, the system performs document discovery by iterating through document type categories (IDs 15-23) and pagination to identify target URLs. Second, during the content extraction phase, we utilize the \textbf{BeautifulSoup} library to parse the downloaded HTML. Specifically, the system targets the content in paragraph elements, stripping HTML tags and formatting artifacts to convert the raw data into clean, plain text. This processed content is subsequently saved as JSON files containing the document ID and full text, organized by document type within the file system.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=1.0\columnwidth]{documents.png}
+	\captionsetup{justification=centering}
+	\caption{Count of Documents Collected by Type}
+	\label{fig:doc_count}
+\end{figure}
+
+The crawler adheres to respectful scraping practices, implementing rate limiting with 2-second delays between requests, retry logic with exponential backoff, and filtering mechanisms for expired documents. The dataset encompasses a wide range of legal categories, for detailed see Figure \ref{fig:doc_count}.
+
+\subsection{Chunking Technique} \label{sec:chunking}
+
+Vietnamese legal documents follow a strict hierarchical structure that provides important context for understanding individual provisions. We developed a specialized chunking pipeline that:
+
+\begin{enumerate}
+	\item \textbf{Parses Document Hierarchy}: Uses regex patterns to identify structural elements:
+	      \begin{itemize}
+		      \item \textit{Chuong} (Chapter).
+		      \item \textit{Muc} (Section).
+		      \item \textit{Dieu} (Article).
+	      \end{itemize}
+
+	\item \textbf{Creates Contextual Chunks}: Each chunk is created at the article level with a context header prepended:
+	      \begin{verbatim}
+[CHUONG I | Dieu 1. Pham vi dieu chinh]
+
+Dieu 1. Pham vi dieu chinh...
+    \end{verbatim}
+
+	\item \textbf{Handles Overflow}: Articles exceeding the token limit are split using recursive character splitting with overlaping windows to preserve context.
+\end{enumerate}
+
+Based on careful observation and manual inspection of the dataset, we determined the optimal parameters for our recursive splitting strategy. We selected a maximum chunk size of 512 tokens with an overlap of 50 tokens. This configuration was chosen empirically, as it accommodates the typical length of Vietnamese legal articles while ensuring sufficient context overlap to prevent information loss at chunk boundaries.
+
+Each chunk retains rich metadata including document ID, document type, title, and hierarchical position (\textit{phan}, \textit{chuong}, \textit{muc}, \textit{dieu}) for provenance tracking.
+
+
+\section{Proposed System}
+
+\subsection{System Architecture}
+
+\subsubsection{Data Ingestion}
+
+\begin{figure*}
+	\centering
+	\includegraphics[width=0.9\textwidth]{ingestion.jpg}
+	\captionsetup{justification=centering}
+	\caption{Overview of Data Ingestion Pipeline}
+	\label{fig:data_ingestion}
+\end{figure*}
+
+The ingestion layer forms the foundation of the system, responsible for transforming raw legal texts into a structured vector knowledge base. The process begins with a Crawler that aggregates unstructured documents from external sources, utilizing Beautiful Soup to parse HTML content into clean, plain text. These documents are passed to a chunking process which is mentioned in \ref{sec:chunking}, which segments the text into semantically meaningful units to fit within model context windows while preserving local context. Subsequently, an embedding model transforms these text chunks into high-dimensional vector representations, capturing semantic nuances. Finally, these vectors, along with their metadata, are indexed in Qdrant, a vector database optimized for high-performance similarity search. To have an overview of this process, please refer to Figure \ref{fig:data_ingestion}.
+
+\subsubsection{Retrieval}
+The retrieval engine connects user intent with relevant knowledge. When a query is received, it is first processed by the {Query Embedding} module, which maps the input text into the same latent space as the document corpus. A {Vector Search} is then executed to identify the nearest neighbor chunks based on a similarity metric (specifically Cosine Similarity). We can also optionally utilize Hybrid Search, combining dense semantic retrieval with sparse keyword matching to leverage both deep semantic understanding and exact term precision. To further refine precision, an {Optional Reranking} stage may be applied, where a cross-encoder model re-scores the initial set of candidates to filter out false positives and prioritize the most semantically relevant passages.
+
+\subsubsection{Generation}
+The generation module synthesizes the final output using a Retrieval-Augmented Generation (RAG) approach. The process starts with {Context Assembly}, where the top-ranked retrieved passages are concatenated and formatted. This context is then integrated into a {Prompt Construction} template, which instructs the Large Language Model (LLM) to answer the user's query strictly based on the provided information. The {LLM Response} is then generated, ensuring the output is grounded in the retrieved legal text rather than relying solely on the model's parametric memory.
+
+\subsubsection{Serving}
+The serving layer acts as the interface between the core logic and the end-user. A FastAPI Backend manages incoming HTTP requests, orchestrates the workflow between the retrieval and generation components, and handles concurrency. The final results are delivered to a Chat Interface built with React, which provides a user-friendly environment for interaction, displaying both the generated answer and citations to the source documents for verification.
+
+\subsection{Embedding and Retrieval Strategy}
+
+To determine the optimal embedding model for our system, we evaluated three candidate models: gte-multilingual-base, bge-m3, and Vietnamese-Embedding-v2.
+
+A significant architectural distinction exists between these candidates. Both gte-multilingual-base and bge-m3 are capable of generating both dense and sparse embeddings, which allows for a hybrid retrieval strategy combining semantic and lexical matching. In contrast, Vietnamese-Embedding-v2 is a specialized model designed to generate only dense embeddings.
+
+Despite the lack of native sparse support, our experiments (detailed in Section \ref{sec:experiments}) demonstrated that Vietnamese-Embedding-v2 outperformed the hybrid configurations of the other models on our dataset. Consequently, we selected it for our final architecture.
+
+The resulting retrieval pipeline is indexed in the Qdrant vector database and operates as follows:
+
+\begin{itemize}
+    \item Embedding: Input queries and documents are encoded into 1024-dimensional dense vectors.
+    \item Retrieval: We employ a Dense Retrieval strategy using Cosine Similarity to identify the most semantically relevant documents.
+\end{itemize}
+
+To prioritize inference speed, we implement this as a single-stage pipeline. We rely solely on the high-quality dense representations from the fine-tuned model and do not employ a secondary reranker or cross-encoder.
+
+\subsection{Traditional RAG Pipeline}
+
+The baseline system for our study implements a standard, linear Retrieval-Augmented Generation (RAG) workflow. This approach follows a strict retrieve-then-generate sequence without intermediate reasoning steps. The process consists of three distinct phases:
+
+\begin{enumerate}
+    \item Retrieval: The user's input query is embedded into a vector space, and the system retrieves the top-k most similar documents from the Qdrant database using the dense retrieval strategy described previously.
+    \item Context Construction: The retrieved documents are concatenated directly to form the context window, without filtering for relevance.
+    \item Generation: This context is passed to the Large Language Model (Gemini 2.5 Flash Lite) along with a system prompt. The prompt strictly instructs the model to act as a Vietnamese legal expert, answer solely based on the provided information, and explicitly admit ignorance if the context is insufficient.
+\end{enumerate}
+
+While effective for direct questions with clear keywords, this linear pipeline lacks flexibility. It processes every input through the retrieval engine regardless of intent and cannot recover from initial retrieval failures caused by ambiguous or poorly phrased queries.
+
+\subsection{Self-Reflective RAG Pipeline}
+
+To address the limitations of the linear approach, we developed a Self-Reflective RAG architecture orchestrated using LangGraph. This system introduces agentic behaviors that allow the pipeline to critique its own retrieval results and adapt its strategy dynamically. This architecture is specifically designed to resolve common failure modes such as handling conversational chit-chat, clarifying ambiguous queries, and filtering irrelevant context.
+
+The pipeline consists of several intelligent decision-making nodes:
+
+\begin{enumerate}
+    \item Query Routing: To optimize resource usage and user experience, an initial LLM call analyzes the user's intent. It distinguishes between general conversational inputs (e.g., greetings, small talk) and domain-specific legal inquiries. "Chit-chat" queries bypass the retrieval process entirely and are answered directly, preventing unnecessary database operations and ensuring natural conversation flow.
+
+    \item Document Retrieval: For legal queries, the system executes the dense retrieval process to fetch candidate documents from the vector store.
+
+    \item Document Grading: Unlike the traditional pipeline which blindly trusts retrieval results, the self-reflective system includes a grading node. Each retrieved document is evaluated by the LLM for relevance to the specific question. Documents deemed irrelevant are filtered out before reaching the generation phase, reducing the risk of hallucination caused by unrelated context.
+
+    \item Query Rewriting and Refinement loop: The system employs a cyclical feedback mechanism to handle ambiguity. If the document grader finds no relevant documents—indicating that the initial query may have been vague or misaligned with the database terminology—the system does not give up. Instead, it triggers a query rewriter. The LLM reformulates the original question using more precise legal terminology and executes a new retrieval attempt.
+\end{enumerate}
+
+This adaptive loop repeats up to three times. If relevant context is found, the system generates a grounded response. If the maximum retries are exceeded without success, the system creates a graceful failure response, ensuring the user is informed of the limitation rather than receiving incorrect information.
+
+\section{Experiments} \label{sec:experiments}
+
+We evaluate ViLeXa on two dimensions: retrieval quality and generation quality.
+
+\subsection{Retrieval Evaluation}
+
+\subsubsection{Experimental Setup}
+
+We compare three embedding models on the Zalo AI Legal Retrieval benchmark:
+\begin{itemize}
+	\item GTE-Multilingual-Base (Alibaba-NLP): 768-dimensional multilingual embeddings
+	\item BGE-M3 (BAAI): 1024-dimensional multilingual embeddings with sparse support
+	\item Vietnamese-Embedding-v2 (AITeamVN): Fine-tuned BGE-M3 for Vietnamese
+\end{itemize}
+
+For each model, we evaluate dense, sparse, and hybrid (dense + sparse) retrieval modes. Metrics include Hit Rate, Precision, Recall, and F1 Score at $k \in \{1, 5, 10\}$.
+
+\subsubsection{Results}
+
+\begin{table}[ht]
+	\centering
+	\captionsetup{justification=centering}
+	\caption{Performance comparison of retrieval models on Zalo AI Legal Retrieval benchmark.}
+	\label{tab:competitor_comparison_wide}
+
+	\resizebox{\columnwidth}{!}{%
+		\setlength{\tabcolsep}{3pt}
+		\begin{tabular}{l|ccc|ccc}
+			\toprule
+			\multirow{2}{*}{\textbf{Model}} & \multicolumn{3}{c|}{\textbf{Hit Rate}} & \multicolumn{3}{c}{\textbf{F1 Score}}                                                                     \\
+			                                & @1                                     & @5                                    & @10            & @1             & @5             & @10            \\
+			\midrule
+			GTE Dense                       & 0.513                                  & 0.827                                 & 0.873          & 0.513          & 0.276          & 0.159          \\
+			GTE Sparse                      & 0.440                                  & 0.720                                 & 0.800          & 0.440          & 0.240          & 0.146          \\
+			GTE Hybrid                      & 0.527                                  & 0.793                                 & 0.880          & 0.527          & 0.264          & 0.160          \\
+			\midrule
+			BGE-M3 Dense                    & 0.547                                  & 0.847                                 & 0.867          & 0.547          & 0.282          & 0.158          \\
+			BGE-M3 Sparse                   & 0.493                                  & 0.793                                 & 0.873          & 0.493          & 0.264          & 0.159          \\
+			BGE-M3 Hybrid                   & 0.580                                  & 0.820                                 & 0.900          & 0.580          & 0.273          & 0.164          \\
+			\midrule
+			Viet-Embed Dense                & \textbf{0.773}                         & \textbf{0.947}                        & \textbf{0.953} & \textbf{0.773} & \textbf{0.315} & \textbf{0.173} \\
+			\bottomrule
+		\end{tabular}%
+	}
+\end{table}
+
+Vietnamese-Embedding-v2 with dense retrieval significantly outperforms all other configurations, achieving 77.3\% Hit Rate@1 compared to 58.0\% for BGE-M3 Hybrid and 52.7\% for GTE Hybrid. This demonstrates the value of language-specific fine-tuning for domain-specific retrieval tasks.
+
+\subsubsection{Reranker Analysis}
+
+We also evaluated the impact of cross-encoder reranking on retrieval quality:
+
+\begin{table}[ht]
+	\centering
+	\captionsetup{justification=centering}
+	\caption{Impact of reranking on Vietnamese-Embedding retrieval (Retrieval $K$ = 10).}
+	\label{tab:reranker}
+
+	\resizebox{\columnwidth}{!}{%
+		\begin{tabular}{l|ccc|c}
+			\toprule
+			\textbf{Configuration} & \textbf{Hit@1} & \textbf{Hit@3} & \textbf{Hit@5} & \textbf{Runtime (s)} \\
+			\midrule
+			Dense Only             & \textbf{0.773} & \textbf{0.900} & \textbf{0.947} & \textbf{0.13}        \\
+			+ bge-v2-m3 Reranker   & 0.673          & 0.853          & 0.940          & 22.44                \\
+			+ gte-multi Reranker   & 0.520          & 0.867          & 0.913          & 8.36                 \\
+			\bottomrule
+		\end{tabular}%
+	}
+\end{table}
+
+Surprisingly, reranking decreases Hit Rate@1 while adding significant latency. This suggests that Vietnamese-Embedding-v2's initial ranking is already well-calibrated for legal queries, and the general-purpose rerankers may not transfer well to this domain.
+
+\subsection{Generation Evaluation}
+
+\subsubsection{Experimental Setup}
+
+We evaluate generation quality using two metrics:
+\begin{itemize}
+	\item \textbf{Answer Relevancy}: How well the response addresses the user's question
+	\item \textbf{Faithfulness}: Whether the response is grounded in the retrieved context (no hallucination)
+\end{itemize}
+
+We compare four configurations using Gemini 2.5 Flash Lite:
+\begin{itemize}
+	\item Traditional RAG with $k=3$ and $k=5$ context documents
+	\item Self-Reflective RAG with $k=3$ and $k=5$ context documents
+\end{itemize}
+
+\subsubsection{Results}
+
+\begin{table}[htbp]
+	\centering
+	\caption{Performance summary of RAG pipelines.}
+	\label{tab:rag_summary}
+	\begin{tabular}{lcccc}
+		\toprule
+		\textbf{Architecture} & \textbf{Runtime} & \textbf{Tokens} & \textbf{Rel.}  & \textbf{Faith.} \\
+		\midrule
+		Self-Reflect $k=3$    & 6.62s            & 4069            & 0.784          & 0.912           \\
+		Self-Reflect $k=5$    & 8.06s            & 5736            & 0.785          & 0.902           \\
+		Traditional $k=3$     & 1.81s            & 1550            & 0.781          & 0.904           \\
+		Traditional $k=5$     & \textbf{3.05s}   & 2472            & \textbf{0.818} & \textbf{0.913}  \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+Key findings:
+\begin{itemize}
+	\item \textbf{Traditional RAG with $k=5$ achieves the best overall performance} with 0.818 relevancy and 0.913 faithfulness
+	\item \textbf{Self-reflective RAG adds 3-5x overhead} due to multiple LLM calls for routing, grading, and potential rewriting
+	\item \textbf{Larger context ($k=5$) improves relevancy} at minimal cost to faithfulness
+	\item \textbf{Self-reflective approach maintains comparable quality}, suggesting its value for complex queries where query rewriting is beneficial
+\end{itemize}
+
+\subsubsection{Pass Rate Analysis}
+
+We also analyze pass rates at different thresholds to understand the distribution of quality scores:
+
+\begin{table}[htbp]
+	\centering
+	\caption{Pass rates at different quality thresholds.}
+	\label{tab:pass_metrics}
+	\small
+	\begin{tabular}{lcccccc}
+		\toprule
+		                & \multicolumn{3}{c}{\textbf{Relevancy}} & \multicolumn{3}{c}{\textbf{Faithfulness}}                                               \\
+		\cmidrule(r){2-4} \cmidrule(l){5-7}
+		\textbf{Config} & @0.5                                   & @0.7                                      & @0.9          & @0.5          & @0.7 & @0.9 \\
+		\midrule
+		Self-Ref $k=3$  & 84.2                                   & 69.9                                      & 56.2          & 93.8          & 90.4 & 80.8 \\
+		Self-Ref $k=5$  & 82.9                                   & 71.2                                      & 56.2          & 94.5          & 91.1 & 76.7 \\
+		Trad. $k=3$     & 82.9                                   & 74.0                                      & 56.2          & 95.9          & 89.0 & 75.3 \\
+		Trad. $k=5$     & \textbf{86.3}                          & \textbf{76.7}                             & \textbf{58.9} & \textbf{95.9} & 88.4 & 77.4 \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+Traditional RAG with $k=5$ achieves the highest pass rates across most thresholds, with 86.3\% of responses scoring above 0.5 relevancy and 95.9\% above 0.5 faithfulness.
+
+\section{Future Work}
+
+Several directions remain for improving ViLeXa:
+
+\begin{itemize}
+	\item \textbf{Domain-Specific Fine-Tuning}: Fine-tuning the embedding model on our collected Vietnamese legal corpus could further improve retrieval accuracy.
+
+	\item \textbf{Multi-Hop Reasoning}: Complex legal questions often require synthesizing information from multiple related articles or cross-referencing between laws. Implementing multi-hop retrieval could address this.
+
+	\item \textbf{Citation Generation}: Automatically generating proper legal citations (e.g., ``Dieu 15, Luat Doanh nghiep 2020'') would increase the practical utility of responses.
+
+	\item \textbf{Temporal Reasoning}: Legal documents have effective dates and may be superseded by newer versions. Incorporating temporal metadata into retrieval could ensure users receive current legal information.
+
+	\item \textbf{User Feedback Integration}: Collecting user feedback on response quality could enable continuous improvement through reinforcement learning or fine-tuning.
+\end{itemize}
+
+\section{Conclusion}
+
+We presented ViLeXa, a Vietnamese Legal Question Answering system that combines specialized document processing with modern RAG architectures. Our key contributions include:
+
+\begin{enumerate}
+	\item A hierarchical chunking strategy that preserves the structure of Vietnamese legal documents
+	\item Comprehensive evaluation of embedding models for Vietnamese legal retrieval, demonstrating the superiority of Vietnamese-Embedding-v2 (77.3\% Hit@1)
+	\item Comparison of traditional and self-reflective RAG pipelines, showing that traditional RAG with adequate context ($k=5$) achieves strong performance (0.818 relevancy, 0.913 faithfulness)
+	\item An end-to-end system deployed with FastAPI and Qdrant for practical legal question answering
+\end{enumerate}
+
+Our results suggest that for Vietnamese legal QA, investing in language-specific embeddings yields greater returns than complex agentic workflows for most queries. However, the self-reflective approach provides a foundation for handling edge cases and could be valuable when combined with more sophisticated query understanding.
+
+\section{Acknowledgments}
+
+We thank our instructors at the University of Information Technology for their guidance on this project. We also acknowledge the creators of the Zalo AI Legal Text Retrieval benchmark and the Vietnamese-Embedding-v2 model, which were essential resources for this work.
+
+
+\bibliography{aaai2026}
+
+\end{document}

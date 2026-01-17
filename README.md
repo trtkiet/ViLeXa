@@ -1,4 +1,4 @@
-# ViLeXa: Vietnamese Law RAG System
+# ViLeXa - Vietnamese Legal Advisor System
 
 A RAG-powered (Retrieval-Augmented Generation) legal assistant for Vietnamese law. This system allows users to ask questions about Vietnamese legislation and receive accurate answers with citations to specific legal articles.
 

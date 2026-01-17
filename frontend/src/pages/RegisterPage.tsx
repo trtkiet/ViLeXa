@@ -23,8 +23,7 @@ export function RegisterPage() {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="flex items-center justify-center gap-2 mb-8">
-          <span className="bg-gray-900 text-white px-2.5 py-1 rounded text-lg font-bold">VA</span>
-          <span className="text-xl font-semibold text-gray-900">Law Assistant</span>
+          <span className="bg-gray-900 text-white px-3 py-1.5 rounded text-lg font-bold">ViLeXa</span>
         </div>
 
         {/* Card */}
