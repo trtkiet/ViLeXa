@@ -45,7 +45,7 @@ interface ChatApiResponse {
 const TypingIndicator: React.FC = () => (
   <div className="flex gap-4 justify-start">
     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-xs font-medium shrink-0">
-      VA
+      VX
     </div>
     <div className="flex items-center gap-1 px-4 py-3">
       <div className="flex gap-1">
@@ -53,7 +53,7 @@ const TypingIndicator: React.FC = () => (
         <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
         <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
       </div>
-      <span className="ml-2 text-sm text-gray-500">Thinking...</span>
+      <span className="ml-2 text-sm text-gray-500">Đang suy nghĩ...</span>
     </div>
   </div>
 );
@@ -361,8 +361,7 @@ export const ChatPage: React.FC = () => {
               </svg>
             </button>
             <div className="flex items-center gap-2">
-              <span className="bg-gray-900 text-white px-2 py-0.5 rounded text-sm font-bold">VA</span>
-              <span className="font-medium text-gray-900 hidden sm:inline">Law Assistant</span>
+              <span className="bg-gray-900 text-white px-2 py-0.5 rounded text-sm font-bold">ViLeXa</span>
             </div>
           </div>
           <nav className="flex items-center gap-1">
@@ -396,13 +395,13 @@ export const ChatPage: React.FC = () => {
             {!activeSessionId && messages.length === 0 && !isLoadingMessages && (
               <div className="text-center py-12">
                 <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-xl font-bold mx-auto mb-4">
-                  VA
+                  VX
                 </div>
                 <h2 className="text-xl font-medium text-gray-900 mb-2">
-                  Vietnamese Law Assistant
+                  ViLeXa
                 </h2>
                 <p className="text-gray-500 max-w-md mx-auto">
-                  Ask me anything about Vietnamese law. I'll help you find relevant legal information and explain complex regulations.
+                  Trợ lý pháp luật Việt Nam. Hỏi tôi bất cứ điều gì về luật pháp Việt Nam.
                 </p>
               </div>
             )}
@@ -429,7 +428,7 @@ export const ChatPage: React.FC = () => {
                       ? 'bg-red-500'
                       : 'bg-gradient-to-br from-blue-500 to-blue-600'
                   }`}>
-                    {msg.isError ? '!' : 'VA'}
+                    {msg.isError ? '!' : 'VX'}
                   </div>
                 )}
 
