@@ -147,14 +147,14 @@
         \node[box=secondary!15, minimum width=1.7cm] (be) at (-2, -0.5) {FastAPI};
         
         % RAG Pipeline box - wider and more spaced
-        \node[box=accent!15, minimum width=7.5cm, minimum height=1.6cm] (ragbox) at (4.5, -0.5) {};
-        \node[font=\footnotesize\bfseries] at (4.5, 0.25) {RAG Pipeline};
+        \node[box=accent!15, minimum width=7.5cm, minimum height=2cm] (ragbox) at (4.5, -0.7) {};
+        \node[font=\footnotesize\bfseries] at (4.5, 0.15) {RAG Pipeline};
         
-        % Inside RAG - more spacing between components
-        \node[box=purple!20, minimum width=1.1cm, font=\tiny] (route) at (2, -0.7) {Route};
-        \node[box=blue!20, minimum width=1.1cm, font=\tiny] (retr) at (3.7, -0.7) {Retrieve};
-        \node[box=accent!30, minimum width=1.1cm, font=\tiny] (grade) at (5.4, -0.7) {Grade};
-        \node[box=secondary!20, minimum width=1.1cm, font=\tiny] (gen) at (7.1, -0.7) {Generate};
+        % Inside RAG - more spacing between components, moved down
+        \node[box=purple!20, minimum width=1.1cm, font=\tiny] (route) at (2, -1) {Route};
+        \node[box=blue!20, minimum width=1.1cm, font=\tiny] (retr) at (3.7, -1) {Retrieve};
+        \node[box=accent!30, minimum width=1.1cm, font=\tiny] (grade) at (5.4, -1) {Grade};
+        \node[box=secondary!20, minimum width=1.1cm, font=\tiny] (gen) at (7.1, -1) {Generate};
         
         \draw[-{Stealth[length=1.5mm]}, dark] (route) -- (retr);
         \draw[-{Stealth[length=1.5mm]}, dark] (retr) -- (grade);
@@ -165,20 +165,20 @@
         \draw[arr=primary] (fe) -- (be);
         \draw[arr=primary] (be) -- (route);
         
-        % Qdrant to Retrieve - vertical then horizontal, avoiding overlap
-        \draw[arr=primary, dashed] (qdrant.south) -- ++(0, -0.8) -| (retr.north);
+        % Qdrant to Retrieve - goes down then right to Retrieve
+        \draw[arr=primary, dashed] (qdrant.south) -- ++(0, -1.1) -| (retr.north);
         
         % LLM connection - positioned to the right, below Generate
-        \node[db=accent!20] (llm) at (7.1, -2.8) {Gemini LLM};
+        \node[db=accent!20] (llm) at (7.1, -3.2) {Gemini LLM};
         \draw[arr=accent, dashed] (gen.south) -- (llm.north);
         
         % Database
-        \node[db=gray!20] (sqlite) at (-2, -2.8) {SQLite};
+        \node[db=gray!20] (sqlite) at (-2, -3.2) {SQLite};
         \draw[arr=gray, dashed] (be) -- (sqlite);
         \node[below=0.05cm of sqlite, font=\tiny] {Sessions};
         
-        % Response arrow - goes far right then up and back left to React UI
-        \draw[arr=secondary] (gen.east) -- ++(0.8, 0) -- ++(0, 2.3) -| (fe.north);
+        % Response arrow - goes far right then up HIGH above top row, then back to React UI
+        \draw[arr=secondary] (gen.east) -- ++(0.8, 0) -- ++(0, 3.5) -| (fe.north);
         
     \end{tikzpicture}
     \end{center}
