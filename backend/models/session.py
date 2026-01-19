@@ -1,8 +1,8 @@
 """Pydantic schemas for chat sessions."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional, Any, Dict
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_serializer
 
 
 class SessionCreate(BaseModel):
@@ -25,8 +25,15 @@ class SessionResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
+
+    @field_serializer("created_at", "updated_at")
+    def serialize_datetime(self, dt: datetime) -> str:
+        """Serialize datetime to ISO format with Z suffix for UTC."""
+        if dt.tzinfo is None:
+            # Assume naive datetime is UTC
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.isoformat().replace("+00:00", "Z")
 
 
 class SessionListResponse(BaseModel):
@@ -56,8 +63,7 @@ class SourceResponse(BaseModel):
     clause: Optional[str] = None
     source_text: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
 
 
 class MessageResponse(BaseModel):
@@ -69,8 +75,15 @@ class MessageResponse(BaseModel):
     timestamp: datetime
     sources: List[SourceResponse] = []
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
+
+    @field_serializer("timestamp")
+    def serialize_datetime(self, dt: datetime) -> str:
+        """Serialize datetime to ISO format with Z suffix for UTC."""
+        if dt.tzinfo is None:
+            # Assume naive datetime is UTC
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.isoformat().replace("+00:00", "Z")
 
 
 class SessionDetailResponse(SessionResponse):

@@ -1,6 +1,6 @@
 """User database model."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, List
 
 from sqlalchemy import String, DateTime
@@ -10,6 +10,11 @@ from db.base import Base
 
 if TYPE_CHECKING:
     from db.models.chat_session import ChatSession
+
+
+def utc_now() -> datetime:
+    """Return current UTC time with timezone info."""
+    return datetime.now(timezone.utc)
 
 
 class User(Base):
@@ -23,7 +28,7 @@ class User(Base):
     )
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow
+        DateTime(timezone=True), default=utc_now
     )
 
     # Relationships

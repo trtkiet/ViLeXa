@@ -1,7 +1,7 @@
 """ChatSession database model."""
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, List
 
 from sqlalchemy import String, DateTime, ForeignKey
@@ -12,6 +12,11 @@ from db.base import Base
 if TYPE_CHECKING:
     from db.models.user import User
     from db.models.message import Message
+
+
+def utc_now() -> datetime:
+    """Return current UTC time with timezone info."""
+    return datetime.now(timezone.utc)
 
 
 class ChatSession(Base):
@@ -27,10 +32,10 @@ class ChatSession(Base):
     )
     title: Mapped[str] = mapped_column(String(255), default="New Chat")
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow
+        DateTime(timezone=True), default=utc_now
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
     )
 
     # Relationships

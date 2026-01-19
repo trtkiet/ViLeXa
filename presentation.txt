@@ -37,7 +37,8 @@
 \subtitle{Vietnamese Legal eXpert Assistant}
 \author{
     \textbf{Nguyen My Thong} - 23521527 \\
-    \textbf{Tran Tuan Kiet} - 23520822
+    \textbf{Tran Tuan Kiet} - 23520822 \\[0.3cm]
+    \small Instructor: \textbf{Dang Van Thin}
 }
 \institute[UIT]{
     CS311.Q11 - AI Programming Techniques \\
@@ -108,7 +109,82 @@
 \end{frame}
 
 % ========================================
-% SLIDE 3: SYSTEM ARCHITECTURE (Full Pipeline)
+% SLIDE 3: RELATED WORK
+% ========================================
+\begin{frame}{Related Works}
+    \begin{center}
+    \begin{columns}[T,onlytextwidth]
+        \begin{column}{0.48\textwidth}
+            \centering
+            \textbf{RAG Foundations}
+            \vspace{0.2cm}
+            
+            \begin{tikzpicture}[
+                work/.style={rectangle, draw=primary, fill=primary!10, rounded corners, minimum width=4.2cm, minimum height=0.5cm, align=center, font=\footnotesize}
+            ]
+                \node[work] (r1) at (0, 1.6) {RAG (Lewis et al., 2020)};
+                \node[font=\tiny, below=0.01cm of r1, text width=4cm, align=center] {Ground LLM in retrieved docs};
+                
+                \node[work] (r2) at (0, 0.5) {Self-RAG, Corrective RAG};
+                \node[font=\tiny, below=0.01cm of r2, text width=4cm, align=center] {Query routing, doc grading, rewriting};
+            \end{tikzpicture}
+            
+            \vspace{0.3cm}
+            \textbf{Vietnamese Embeddings}
+            \vspace{0.2cm}
+            
+            \begin{tikzpicture}[
+                work/.style={rectangle, draw=secondary, fill=secondary!10, rounded corners, minimum width=4.2cm, minimum height=0.5cm, align=center, font=\footnotesize}
+            ]
+                \node[work] (e1) at (0, 1.6) {GTE-Multilingual};
+                \node[font=\tiny, below=0.01cm of e1] {768-dim, general multilingual};
+                
+                \node[work] (e2) at (0, 0.5) {BGE-M3};
+                \node[font=\tiny, below=0.01cm of e2] {Dense + Sparse, 100+ languages};
+                
+                \node[work, fill=best!20, draw=best] (e3) at (0, -0.6) {Vietnamese-Embedding-v2};
+                \node[font=\tiny, below=0.01cm of e3] {BGE-M3 fine-tuned for Vietnamese};
+            \end{tikzpicture}
+        \end{column}
+        
+        \begin{column}{0.48\textwidth}
+            \centering
+            \textbf{Legal QA Challenges}
+            \vspace{0.2cm}
+            
+            \begin{tikzpicture}[
+                challenge/.style={rectangle, draw=accent, fill=accent!10, rounded corners, minimum width=4.2cm, minimum height=0.5cm, align=center, font=\footnotesize}
+            ]
+                \node[challenge] (c1) at (0, 2.4) {Hierarchical Structure};
+                \node[font=\tiny, below=0.01cm of c1] {Phan $\rightarrow$ Chuong $\rightarrow$ Muc $\rightarrow$ Dieu};
+                
+                \node[challenge] (c2) at (0, 1.3) {Cross-references};
+                \node[font=\tiny, below=0.01cm of c2] {Laws reference other laws};
+                
+                \node[challenge] (c3) at (0, 0.2) {Precise Citations Required};
+                \node[font=\tiny, below=0.01cm of c3] {Must cite specific Dieu, Khoan};
+            \end{tikzpicture}
+            
+            \vspace{0.3cm}
+            \textbf{Benchmarks}
+            \vspace{0.2cm}
+            
+            \begin{tikzpicture}[
+                bench/.style={rectangle, draw=purple, fill=purple!10, rounded corners, minimum width=4.2cm, minimum height=0.5cm, align=center, font=\footnotesize}
+            ]
+                \node[bench] (b1) at (0, 0.8) {Zalo AI Legal Retrieval};
+                \node[font=\tiny, below=0.01cm of b1] {61K docs, 793 queries};
+                
+                \node[bench] (b2) at (0, -0.3) {VLSP Legal QA};
+                \node[font=\tiny, below=0.01cm of b2] {Vietnamese legal comprehension};
+            \end{tikzpicture}
+        \end{column}
+    \end{columns}
+    \end{center}
+\end{frame}
+
+% ========================================
+% SLIDE 4: SYSTEM ARCHITECTURE (Full Pipeline)
 % ========================================
 \begin{frame}{System Architecture: End-to-End Pipeline}
     \begin{center}
@@ -136,7 +212,7 @@
         
         % Annotations
         \node[below=0.1cm of crawl, font=\tiny, text=gray] {20K docs};
-        \node[below=0.1cm of chunk, font=\tiny, text=gray] {150K chunks};
+        \node[below=0.1cm of chunk, font=\tiny, text=gray] {273K chunks};
         \node[below=0.1cm of embed, font=\tiny, text=gray] {1024-dim};
         
         % Online Pipeline - User icon
@@ -148,7 +224,7 @@
         
         % RAG Pipeline box - wider and more spaced
         \node[box=accent!15, minimum width=7.5cm, minimum height=2cm] (ragbox) at (4.5, -0.7) {};
-        \node[font=\footnotesize\bfseries] at (4.5, 0.15) {RAG Pipeline};
+        \node[font=\footnotesize\bfseries] at (4.5, -0.1) {RAG Pipeline};
         
         % Inside RAG - more spacing between components, moved down
         \node[box=purple!20, minimum width=1.1cm, font=\tiny] (route) at (2, -1) {Route};
@@ -159,26 +235,27 @@
         \draw[-{Stealth[length=1.5mm]}, dark] (route) -- (retr);
         \draw[-{Stealth[length=1.5mm]}, dark] (retr) -- (grade);
         \draw[-{Stealth[length=1.5mm]}, dark] (grade) -- (gen);
+        \draw[arr=secondary] (grade.south) -- ++(0, -1.1) -- ++(-1.7, 0) --(retr.south)
         
         % User connections
-        \draw[arr=primary] (user) -- (fe);
-        \draw[arr=primary] (fe) -- (be);
-        \draw[arr=primary] (be) -- (route);
+        \draw[arr=secondary, <->] (user) -- (fe);
+        \draw[arr=secondary, <->] (fe) -- (be);
+        \draw[arr=secondary] (be) -- (route);
         
         % Qdrant to Retrieve - goes down then right to Retrieve
-        \draw[arr=primary, dashed] (qdrant.south) -- ++(0, -1.1) -| (retr.north);
+        \draw[arr=secondary] (qdrant.south) -- ++(0, -2.1) -| (retr.north);
         
-        % LLM connection - positioned to the right, below Generate
+        LLM connection - positioned to the right, below Generate
         \node[db=accent!20] (llm) at (7.1, -3.2) {Gemini LLM};
-        \draw[arr=accent, dashed] (gen.south) -- (llm.north);
+        \draw[arr=secondary, dashed, <->] (llm.north) -- (gen.south);
         
         % Database
         \node[db=gray!20] (sqlite) at (-2, -3.2) {SQLite};
-        \draw[arr=gray, dashed] (be) -- (sqlite);
+        \draw[arr=secondary, <->] (be) -- (sqlite);
         \node[below=0.05cm of sqlite, font=\tiny] {Sessions};
         
         % Response arrow - goes far right then up HIGH above top row, then back to React UI
-        \draw[arr=secondary] (gen.east) -- ++(1.0, 0) -- ++(0, 2.0) -| (fe.north);
+        \draw[arr=secondary] (gen.east) -- ++(1.0, 0) -- ++(0, 2.0) -| (be.north);
         
     \end{tikzpicture}
     \end{center}
@@ -191,7 +268,51 @@
 \end{frame}
 
 % ========================================
-% SLIDE 4: DATA PREPROCESSING
+% SLIDE 5: DATA PREPARATION
+% ========================================
+\begin{frame}{Data Preparation: Collection Pipeline}
+    \begin{columns}[T]
+        \begin{column}{0.55\textwidth}
+            \vspace{0.1cm}
+            \includegraphics[width=\textwidth]{data_preparation.jpeg}
+        \end{column}
+        
+        \begin{column}{0.43\textwidth}
+            \textbf{Two-Stage Process}
+            \vspace{0.15cm}
+            
+            \footnotesize
+            \textbf{1. Document Discovery}
+            \begin{itemize}
+                \setlength\itemsep{0.02em}
+                \item[\tiny$\bullet$] \tiny Iterate document types (IDs 15-23)
+                \item[\tiny$\bullet$] \tiny Pagination to find target URLs
+            \end{itemize}
+            
+            \vspace{0.15cm}
+            \textbf{2. Content Extraction}
+            \begin{itemize}
+                \setlength\itemsep{0.02em}
+                \item[\tiny$\bullet$] \tiny BeautifulSoup parses HTML
+                \item[\tiny$\bullet$] \tiny Strip tags $\rightarrow$ clean text
+                \item[\tiny$\bullet$] \tiny Save as JSON (id + content)
+            \end{itemize}
+            
+            \vspace{0.2cm}
+            \fcolorbox{secondary}{secondary!10}{
+                \parbox{0.95\textwidth}{
+                    \centering\tiny
+                    \textbf{Respectful Scraping}\\
+                    2s delay | Retry w/ backoff\\
+                    Filter expired docs
+                }
+            }
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% ========================================
+% SLIDE 6: DATA PREPROCESSING
 % ========================================
 \begin{frame}{Data Preprocessing: Structure-Aware Chunking}
     \begin{columns}[T]
@@ -256,7 +377,7 @@
             \fcolorbox{secondary}{secondary!10}{
                 \parbox{0.9\textwidth}{
                     \centering\footnotesize
-                    \textbf{20,410 docs} $\rightarrow$ \textbf{150K chunks}\\
+                    \textbf{20,410 docs} $\rightarrow$ \textbf{273K chunks}\\
                     Max 512 tokens | 50 token overlap
                 }
             }
@@ -327,7 +448,81 @@
 \end{frame}
 
 % ========================================
-% SLIDE 6: EMBEDDING MODEL EVALUATION
+% SLIDE 7: EXPERIMENT SETUP
+% ========================================
+\begin{frame}{Experiment Setup}
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \textbf{Retrieval Evaluation}
+            \vspace{0.2cm}
+            
+            \fcolorbox{primary}{primary!5}{
+                \parbox{0.95\textwidth}{
+                    \footnotesize
+                    \textbf{Dataset}: Zalo AI Legal Retrieval\\
+                    \textbf{Corpus}: 61,425 legal documents\\
+                    \textbf{Queries}: 793 annotated queries\\
+                    \textbf{Chunking}: 512 tokens, 50 overlap
+                }
+            }
+            
+            \vspace{0.3cm}
+            \textbf{Protocol}:
+            \begin{enumerate}
+                \setlength\itemsep{0.05em}
+                \item[\footnotesize 1.] \footnotesize Ingest \& embed all chunks
+                \item[\footnotesize 2.] \footnotesize Retrieve top-k for each query
+                \item[\footnotesize 3.] \footnotesize Map chunks $\rightarrow$ Article IDs
+                \item[\footnotesize 4.] \footnotesize Score against ground truth
+            \end{enumerate}
+            
+            \vspace{0.2cm}
+            \textbf{Metrics}: Hit Rate, Precision, Recall, F1\\
+            @ $k \in \{1, 5, 10\}$
+        \end{column}
+        
+        \begin{column}{0.48\textwidth}
+            \textbf{Generation Evaluation}
+            \vspace{0.2cm}
+            
+            \fcolorbox{secondary}{secondary!5}{
+                \parbox{0.95\textwidth}{
+                    \footnotesize
+                    \textbf{Dataset}: VLSP2025 Public-test\\
+                    \textbf{Task}: Legal MCQ\\
+                    \textbf{Queries}: 146 QA pairs\\
+                    \textbf{LLM}: Gemini 2.5 Flash Lite
+                }
+            }
+            
+            \vspace{0.3cm}
+            \textbf{LLM-as-Judge} (DeepEval):
+            \vspace{0.1cm}
+            
+            \begin{tikzpicture}[
+                metric/.style={rectangle, draw=#1, fill=#1!10, rounded corners, minimum width=4cm, minimum height=0.5cm, align=center, font=\footnotesize}
+            ]
+                \node[metric=primary] (m1) at (0, 1) {\textbf{Relevancy}};
+                \node[font=\tiny, right=0.1cm of m1] {Answers query?};
+                
+                \node[metric=secondary] (m2) at (0, 0) {\textbf{Faithfulness}};
+                \node[font=\tiny, right=0.1cm of m2] {No hallucination?};
+            \end{tikzpicture}
+            
+            \vspace{0.3cm}
+            \textbf{Configurations Tested}:
+            \begin{itemize}
+                \setlength\itemsep{0.02em}
+                \item[\footnotesize$\bullet$] \footnotesize 3 embedding models
+                \item[\footnotesize$\bullet$] \footnotesize 4 reranker options
+                \item[\footnotesize$\bullet$] \footnotesize 2 RAG architectures $\times$ 2 k values
+            \end{itemize}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% ========================================
+% SLIDE 8: EMBEDDING MODEL EVALUATION
 % ========================================
 \begin{frame}{Embedding Model Selection: Why Vietnamese-Specific?}
     \vspace{-0.1cm}
@@ -414,7 +609,7 @@
 \begin{frame}{Reranker Evaluation: Is It Worth the Cost?}
     \textbf{Question}: Does cross-encoder reranking improve retrieval quality?
     
-    \vspace{0.3cm}
+    \vspace{0.2cm}
     \begin{columns}[T]
         \begin{column}{0.55\textwidth}
             \begin{center}
@@ -423,19 +618,20 @@
                 \toprule
                 \textbf{Configuration} & \textbf{Hit@1} & \textbf{Hit@3} & \textbf{Hit@5} & \textbf{Latency} \\
                 \midrule
-                \rowcolor{best!20} Dense Only & \textbf{0.773} & \textbf{0.900} & \textbf{0.947} & \textbf{0.13s} \\
+                Dense Only & 0.773 & 0.900 & 0.947 & \textbf{0.13s} \\
                 + bge-reranker-v2-m3 & 0.673 & 0.853 & 0.940 & 22.44s \\
                 + gte-multi-reranker & 0.520 & 0.867 & 0.913 & 8.36s \\
+                \rowcolor{best!20} + Vietnamese-Reranker & \textbf{0.827} & \textbf{0.907} & \textbf{0.947} & 23.22s \\
                 \bottomrule
             \end{tabular}
             \end{center}
             
-            \vspace{0.3cm}
-            \textbf{Surprising Finding}:
+            \vspace{0.2cm}
+            \textbf{Key Findings}:
             \begin{itemize}
-                \item[\textcolor{danger}{$\times$}] Rerankers \textbf{decrease} Hit@1 by 10-25\%
-                \item[\textcolor{danger}{$\times$}] Latency increases \textbf{170x} (0.13s $\rightarrow$ 22s)
-                \item[\textcolor{best}{\checkmark}] Vietnamese-Embedding already well-calibrated
+                \item[\textcolor{danger}{$\times$}] General rerankers \textbf{hurt} Hit@1 (-10 to -25\%)
+                \item[\textcolor{best}{\checkmark}] Vietnamese-Reranker \textbf{best} (+7\% Hit@1)
+                \item[\textcolor{accent}{!}] But latency: 0.13s $\rightarrow$ 23s (\textbf{178x})
             \end{itemize}
         \end{column}
         
@@ -452,40 +648,43 @@
                 }
                 
                 % Points
-                \fill[best!80] (0.3, 3.1) circle (4pt);
+                \fill[primary!80] (0.3, 3.1) circle (4pt);
                 \node[right, font=\tiny] at (0.5, 3.1) {No Reranker};
                 
-                \fill[accent!80] (2.0, 2.1) circle (4pt);
-                \node[right, font=\tiny] at (2.1, 2.1) {gte-reranker};
+                \fill[danger!80] (2.0, 2.1) circle (4pt);
+                \node[right, font=\tiny] at (2.1, 2.1) {gte};
                 
-                \fill[danger!80] (4.2, 2.7) circle (4pt);
-                \node[left, font=\tiny] at (4.1, 2.7) {bge-reranker};
+                \fill[danger!80] (4.3, 2.7) circle (4pt);
+                \node[above, font=\tiny] at (4.3, 2.6) {bge};
                 
-                % Optimal region - properly enclosed
-                \draw[best, thick, dashed] (-0.1, 2.85) rectangle (0.6, 3.35);
-                \node[font=\tiny, best, above] at (0.6, 3.35) {Optimal};
+                \fill[best] (4.5, 3.3) circle (4pt);
+                \node[above, font=\tiny, best] at (4.5, 3.45) {Viet};
+                
+                % Tradeoff annotation
+                \draw[accent, thick, dashed, ->] (0.5, 3.2) -- (4.3, 3.5);
+                \node[font=\tiny, accent, above, rotate=3] at (2.4, 3.3) {+7\% but 178x slower};
                 
                 % Axis labels
                 \node[below, font=\tiny] at (0, -0.2) {0};
-                \node[below, font=\tiny] at (4.2, -0.2) {22};
+                \node[below, font=\tiny] at (4.5, -0.2) {23};
             \end{tikzpicture}
             \end{center}
             
-            \vspace{0.15cm}
+            \vspace{0.1cm}
             \begin{center}
             \fcolorbox{primary}{primary!10}{
                 \parbox{0.9\textwidth}{
                     \centering\footnotesize
-                    \textbf{Decision}: Skip reranker\\
-                    High-quality embedding sufficient
+                    \textbf{Decision}: No reranker (prod)\\
+                    Best accuracy/latency tradeoff
                 }
             }
             \end{center}
         \end{column}
     \end{columns}
     
-    \vspace{0.2cm}
-    \textbf{Interpretation}: General-purpose rerankers don't transfer well to Vietnamese legal domain
+    \vspace{0.15cm}
+    \textbf{Insight}: Language-specific reranker helps, but 178x latency cost not justified for real-time use
 \end{frame}
 
 % ========================================
@@ -705,9 +904,8 @@
             \fcolorbox{secondary}{secondary!10}{
                 \parbox{0.9\textwidth}{
                     \centering\footnotesize
-                    \textbf{Recommendation}:\\
-                    Traditional RAG (k=5)\\
-                    for most queries
+                    \textbf{Insight}:\\
+                    Self-reflective RAG have slightly lower performance.
                 }
             }
             \end{center}
@@ -715,191 +913,77 @@
     \end{columns}
 \end{frame}
 
-% ========================================
-% SLIDE 11: PASS RATE ANALYSIS
-% ========================================
-\begin{frame}{Detailed Quality Analysis: Pass Rates}
-    \begin{columns}[c]
-        \begin{column}{0.48\textwidth}
-            \begin{center}
-            \textbf{Pass Rate at Different Thresholds}
-            \vspace{0.15cm}
+% % ========================================
+% % SLIDE 11: PASS RATE ANALYSIS
+% % ========================================
+% \begin{frame}{Detailed Quality Analysis: Pass Rates}
+%     \begin{columns}[c]
+%         \begin{column}{0.48\textwidth}
+%             \begin{center}
+%             \textbf{Pass Rate at Different Thresholds}
+%             \vspace{0.15cm}
             
-            \footnotesize
-            \begin{tabular}{l|ccc}
-                \toprule
-                & \multicolumn{3}{c}{\textbf{Relevancy Pass \%}} \\
-                \textbf{Config} & @0.5 & @0.7 & @0.9 \\
-                \midrule
-                Self-R k=3 & 84.2 & 69.9 & 56.2 \\
-                Self-R k=5 & 82.9 & 71.2 & 56.2 \\
-                Trad. k=3 & 82.9 & 74.0 & 56.2 \\
-                \rowcolor{best!20} \textbf{Trad. k=5} & \textbf{86.3} & \textbf{76.7} & \textbf{58.9} \\
-                \bottomrule
-            \end{tabular}
+%             \footnotesize
+%             \begin{tabular}{l|ccc}
+%                 \toprule
+%                 & \multicolumn{3}{c}{\textbf{Relevancy Pass \%}} \\
+%                 \textbf{Config} & @0.5 & @0.7 & @0.9 \\
+%                 \midrule
+%                 Self-R k=3 & 84.2 & 69.9 & 56.2 \\
+%                 Self-R k=5 & 82.9 & 71.2 & 56.2 \\
+%                 Trad. k=3 & 82.9 & 74.0 & 56.2 \\
+%                 \rowcolor{best!20} \textbf{Trad. k=5} & \textbf{86.3} & \textbf{76.7} & \textbf{58.9} \\
+%                 \bottomrule
+%             \end{tabular}
             
-            \vspace{0.25cm}
+%             \vspace{0.25cm}
             
-            \footnotesize
-            \begin{tabular}{l|ccc}
-                \toprule
-                & \multicolumn{3}{c}{\textbf{Faithfulness Pass \%}} \\
-                \textbf{Config} & @0.5 & @0.7 & @0.9 \\
-                \midrule
-                Self-R k=3 & 93.8 & 90.4 & 80.8 \\
-                Self-R k=5 & 94.5 & 91.1 & 76.7 \\
-                \rowcolor{best!20} \textbf{Trad. k=3} & \textbf{95.9} & 89.0 & 75.3 \\
-                Trad. k=5 & 95.9 & 88.4 & 77.4 \\
-                \bottomrule
-            \end{tabular}
-            \end{center}
-        \end{column}
+%             \footnotesize
+%             \begin{tabular}{l|ccc}
+%                 \toprule
+%                 & \multicolumn{3}{c}{\textbf{Faithfulness Pass \%}} \\
+%                 \textbf{Config} & @0.5 & @0.7 & @0.9 \\
+%                 \midrule
+%                 Self-R k=3 & 93.8 & 90.4 & 80.8 \\
+%                 Self-R k=5 & 94.5 & 91.1 & 76.7 \\
+%                 \rowcolor{best!20} \textbf{Trad. k=3} & \textbf{95.9} & 89.0 & 75.3 \\
+%                 Trad. k=5 & 95.9 & 88.4 & 77.4 \\
+%                 \bottomrule
+%             \end{tabular}
+%             \end{center}
+%         \end{column}
         
-        \begin{column}{0.48\textwidth}
-            \begin{center}
-            \textbf{Interpretation}
-            \vspace{0.15cm}
+%         \begin{column}{0.48\textwidth}
+%             \begin{center}
+%             \textbf{Interpretation}
+%             \vspace{0.15cm}
             
-            \begin{tikzpicture}[
-                insight/.style={rectangle, draw=#1, fill=#1!10, rounded corners, minimum width=4.2cm, minimum height=0.55cm, align=center, font=\footnotesize}
-            ]
-                \node[insight=best] (i1) at (0, 2.2) {86\% relevancy $\geq$ 0.5};
-                \node[insight=secondary] (i2) at (0, 1.3) {96\% faithfulness $\geq$ 0.5};
-                \node[insight=primary] (i3) at (0, 0.4) {Faithfulness $>$ Relevancy};
-            \end{tikzpicture}
+%             \begin{tikzpicture}[
+%                 insight/.style={rectangle, draw=#1, fill=#1!10, rounded corners, minimum width=4.2cm, minimum height=0.55cm, align=center, font=\footnotesize}
+%             ]
+%                 \node[insight=best] (i1) at (0, 2.2) {86\% relevancy $\geq$ 0.5};
+%                 \node[insight=secondary] (i2) at (0, 1.3) {96\% faithfulness $\geq$ 0.5};
+%                 \node[insight=primary] (i3) at (0, 0.4) {Faithfulness $>$ Relevancy};
+%             \end{tikzpicture}
             
-            \vspace{0.25cm}
-            \fcolorbox{accent}{accent!10}{
-                \parbox{0.9\textwidth}{
-                    \centering\footnotesize
-                    \textbf{High Faithfulness} (96\%)\\
-                    = Low Hallucination Risk\\[0.05cm]
-                    Critical for legal domain
-                }
-            }
+%             \vspace{0.25cm}
+%             \fcolorbox{accent}{accent!10}{
+%                 \parbox{0.9\textwidth}{
+%                     \centering\footnotesize
+%                     \textbf{High Faithfulness} (96\%)\\
+%                     = Low Hallucination Risk\\[0.05cm]
+%                     Critical for legal domain
+%                 }
+%             }
             
-            \vspace{0.2cm}
-            \footnotesize
-            \textbf{Evaluation Method}:\\
-            LLM-as-Judge (Gemini) | DeepEval
-            \end{center}
-        \end{column}
-    \end{columns}
-\end{frame}
-
-% ========================================
-% SLIDE 12: EVALUATION METHODOLOGY
-% ========================================
-\begin{frame}{Evaluation Methodology}
-    \begin{columns}[T]
-        \begin{column}{0.48\textwidth}
-            \textbf{Retrieval Metrics}
-            \vspace{0.2cm}
-            
-            \begin{tikzpicture}[
-                metric/.style={rectangle, draw=primary, fill=primary!10, rounded corners, minimum width=4.2cm, minimum height=0.6cm, align=left, font=\footnotesize}
-            ]
-                \node[metric] (m1) at (0, 2.4) {\textbf{Hit Rate @k}};
-                \node[font=\tiny, right=0.1cm of m1] {$\geq$1 relevant in top-k};
-                
-                \node[metric] (m2) at (0, 1.4) {\textbf{Precision @k}};
-                \node[font=\tiny, right=0.1cm of m2] {Relevant / Retrieved};
-                
-                \node[metric] (m3) at (0, 0.4) {\textbf{F1 Score @k}};
-                \node[font=\tiny, right=0.1cm of m3] {Harmonic mean};
-            \end{tikzpicture}
-            
-            \vspace{0.3cm}
-            \textbf{Generation Metrics}
-            \vspace{0.2cm}
-            
-            \begin{tikzpicture}[
-                metric/.style={rectangle, draw=secondary, fill=secondary!10, rounded corners, minimum width=4.2cm, minimum height=0.6cm, align=left, font=\footnotesize}
-            ]
-                \node[metric] (g1) at (0, 1.2) {\textbf{Relevancy}};
-                \node[font=\tiny, right=0.1cm of g1] {Addresses query?};
-                
-                \node[metric] (g2) at (0, 0.2) {\textbf{Faithfulness}};
-                \node[font=\tiny, right=0.1cm of g2] {Grounded in context?};
-            \end{tikzpicture}
-        \end{column}
-        
-        \begin{column}{0.48\textwidth}
-            \textbf{Evaluation Setup}
-            \vspace{0.2cm}
-            
-            \fcolorbox{dark}{lightgray}{
-                \parbox{0.95\textwidth}{
-                    \footnotesize
-                    \textbf{Dataset}: Zalo AI Legal Benchmark\\
-                    \textbf{Queries}: 150 legal questions\\
-                    \textbf{Types}: Factual, procedural, comparative\\
-                    \textbf{Judge}: Gemini (LLM-as-Judge)\\
-                    \textbf{Framework}: DeepEval
-                }
-            }
-            
-            \vspace{0.3cm}
-            \textbf{Experiment Coverage}
-            \vspace{0.2cm}
-            
-            \begin{tikzpicture}[
-                box/.style={rectangle, draw=dark, fill=#1, rounded corners, minimum width=2cm, minimum height=0.5cm, align=center, font=\tiny}
-            ]
-                \node[box=primary!20] at (0, 0.8) {7 Embedding};
-                \node[box=accent!20] at (2.3, 0.8) {4 Reranker};
-                \node[box=secondary!20] at (4.6, 0.8) {4 RAG};
-                
-                \node[font=\footnotesize, below] at (2.3, 0.2) {\textbf{= 2,250 evaluated retrievals}};
-            \end{tikzpicture}
-        \end{column}
-    \end{columns}
-\end{frame}
-
-% ========================================
-% SLIDE 13: TECHNOLOGY STACK
-% ========================================
-\begin{frame}{Technology Stack}
-    \vspace{-0.1cm}
-    \begin{center}
-    \begin{tikzpicture}[
-        layer/.style={rectangle, draw=dark, fill=#1, rounded corners, minimum width=11.5cm, minimum height=0.7cm, align=center, font=\small},
-    ]
-        \node[layer=primary!15] (fe) at (0, 2.5) {\textbf{Frontend}: React + TypeScript + TailwindCSS};
-        \node[layer=secondary!15] (be) at (0, 1.5) {\textbf{Backend}: FastAPI + SQLAlchemy + JWT Authentication};
-        \node[layer=accent!15] (ai) at (0, 0.5) {\textbf{RAG}: LangChain + LangGraph + Gemini 2.5 Flash Lite};
-        \node[layer=purple!15] (db) at (0, -0.5) {\textbf{Vector DB}: Qdrant + Vietnamese-Embedding-v2 (1024-dim)};
-        \node[layer=gray!15] (infra) at (0, -1.5) {\textbf{Infrastructure}: Docker Compose + NVIDIA GPU};
-    \end{tikzpicture}
-    \end{center}
-    
-    \vspace{0.15cm}
-    \begin{center}
-    \begin{columns}[c]
-        \begin{column}{0.40\textwidth}
-            \centering
-            \textbf{Key Design Decisions}
-            \begin{itemize}
-                \setlength\itemsep{0.1em}
-                \item[\checkmark] \footnotesize Qdrant: native hybrid search
-                \item[\checkmark] \footnotesize LangGraph: stateful workflows
-                \item[\checkmark] \footnotesize Local GPU: fast embedding
-            \end{itemize}
-        \end{column}
-        \hspace{1.5cm}
-        \begin{column}{0.40\textwidth}
-            \centering
-            \textbf{Performance}
-            \begin{itemize}
-                \setlength\itemsep{0.1em}
-                \item[\checkmark] \footnotesize Retrieval: 0.13s per query
-                \item[\checkmark] \footnotesize Generation: 3.05s (k=5)
-                \item[\checkmark] \footnotesize 150K chunks indexed
-            \end{itemize}
-        \end{column}
-    \end{columns}
-    \end{center}
-\end{frame}
+%             \vspace{0.2cm}
+%             \footnotesize
+%             \textbf{Evaluation Method}:\\
+%             LLM-as-Judge (Gemini) | DeepEval
+%             \end{center}
+%         \end{column}
+%     \end{columns}
+% \end{frame}
 
 % ========================================
 % SLIDE 14: KEY FINDINGS SUMMARY
@@ -921,7 +1005,7 @@
             \textbf{Retrieval Strategy}\\[0.1cm]
             \footnotesize Dense Only (no reranker)
         };
-        \node[evidence, below=0.1cm of f2] {Reranker \textcolor{danger}{hurts} Hit@1 by 10-25\%};
+        \node[evidence, below=0.1cm of f2] {\textcolor{red}{-7\% Hit@1} vs Vietnamese-Reranker, but \textcolor{green}{177x faster}};
         
         % Row 2
         \node[finding=secondary!15] (f3) at (0, -1.5) {
@@ -932,7 +1016,7 @@
         
         \node[finding=purple!15] (f4) at (6.5, -1.5) {
             \textbf{Self-Reflective RAG}\\[0.1cm]
-            \footnotesize For edge cases
+            \footnotesize For deployment-ready cases
         };
         \node[evidence, below=0.1cm of f4] {Query rewriting for ambiguous queries};
         
@@ -944,12 +1028,50 @@
     \fcolorbox{best}{best!10}{
         \parbox{0.85\textwidth}{
             \centering
-            \textbf{Best Configuration}: Vietnamese-Embedding-v2 + Dense Retrieval + Traditional RAG (k=5)\\
-            \footnotesize Hit@1: 77.3\% | Relevancy: 0.818 | Faithfulness: 0.913 | Latency: 3.05s
+            \textbf{Chosen Configuration}: Vietnamese-Embedding-v2 + Dense Retrieval + Self-Reflective RAG (k=3)\\
+            \footnotesize Hit@1: 77.3\% | Relevancy: 0.784 | Faithfulness: 0.912 | Latency: 8.05s
         }
     }
     \end{center}
 \end{frame}
+
+% ========================================
+% SLIDE 13: TECHNOLOGY STACK
+% ========================================
+\begin{frame}{Technology Stack}
+    \vspace{-0.1cm}
+    \begin{center}
+    \begin{tikzpicture}[
+        layer/.style={rectangle, draw=dark, fill=#1, rounded corners, minimum width=11.5cm, minimum height=0.7cm, align=center, font=\small},
+    ]
+        \node[layer=primary!15] (fe) at (0, 2.5) {\textbf{Frontend}: React + TypeScript + TailwindCSS};
+        \node[layer=secondary!15] (be) at (0, 1.5) {\textbf{Backend}: FastAPI + SQLAlchemy + JWT Authentication};
+        \node[layer=accent!15] (ai) at (0, 0.5) {\textbf{RAG}: LangChain + LangGraph + Gemini 2.5 Flash Lite};
+        \node[layer=purple!15] (db) at (0, -0.5) {\textbf{Vector DB}: Qdrant + Vietnamese-Embedding-v2 (1024-dim)};
+        \node[layer=gray!15] (infra) at (0, -1.5) {\textbf{Infrastructure}: Docker Compose + NVIDIA GPU};
+    \end{tikzpicture}
+    \end{center}
+    
+    \vspace{0.15cm}
+    \begin{center}
+    \begin{tabular}{c@{\hspace{2cm}}c}
+        \textbf{Key Design Decisions} & \textbf{Performance} \\[0.2cm]
+        \begin{tabular}[t]{@{}l@{}}
+            \checkmark\ \footnotesize Qdrant: native hybrid search \\[0.1cm]
+            \checkmark\ \footnotesize LangGraph: stateful workflows \\[0.1cm]
+            \checkmark\ \footnotesize Local GPU: fast embedding
+        \end{tabular}
+        &
+        \begin{tabular}[t]{@{}l@{}}
+            \checkmark\ \footnotesize Retrieval: 0.13s per query \\[0.1cm]
+            \checkmark\ \footnotesize Generation: 3.05s (k=5) \\[0.1cm]
+            \checkmark\ \footnotesize 273K chunks indexed
+        \end{tabular}
+    \end{tabular}
+    \end{center}
+\end{frame}
+
+
 
 % ========================================
 % SLIDE 15: LIMITATIONS & FUTURE WORK
@@ -965,9 +1087,8 @@
                 limit/.style={rectangle, draw=danger, fill=danger!10, rounded corners, minimum width=4.3cm, minimum height=0.5cm, align=center, font=\footnotesize}
             ]
                 \node[limit] (l1) at (0, 2.4) {Evaluation set: 150 queries};
-                \node[limit] (l2) at (0, 1.6) {No Vietnamese legal LLM};
-                \node[limit] (l3) at (0, 0.8) {Single-hop reasoning only};
-                \node[limit] (l4) at (0, 0) {No temporal awareness};
+                \node[limit] (l2) at (0, 1.6) {No real benchmark};
+                \node[limit] (l3) at (0, 0.8) {Manual Data Pipeline};
             \end{tikzpicture}
             \end{center}
         \end{column}
@@ -981,70 +1102,52 @@
                 future/.style={rectangle, draw=secondary, fill=secondary!10, rounded corners, minimum width=4.3cm, minimum height=0.5cm, align=center, font=\footnotesize}
             ]
                 \node[future] (f1) at (0, 2.4) {Expand benchmark};
-                \node[future] (f2) at (0, 1.6) {Fine-tune legal embedding};
-                \node[future] (f3) at (0, 0.8) {Multi-hop reasoning};
-                \node[future] (f4) at (0, 0) {Temporal document filtering};
+                \node[future] (f2) at (0, 1.6) {Dynamic Document Management};
+                \node[future] (f4) at (0, 0.8) {Implement Advanced Architecture};
             \end{tikzpicture}
             \end{center}
         \end{column}
     \end{columns}
     
     \vspace{0.4cm}
-    \begin{center}
-    \fcolorbox{primary}{primary!10}{
-        \parbox{0.8\textwidth}{
-            \centering\footnotesize
-            \textbf{Key Insight}: Language-specific embedding yields greater returns\\
-            than complex agentic workflows for Vietnamese legal domain
-        }
-    }
-    \end{center}
+    % \begin{center}
+    % \fcolorbox{primary}{primary!10}{
+    %     % \parbox{0.8\textwidth}{
+    %     %     \centering\footnotesize
+    %     %     \textbf{Key Insight}: Language-specific embedding yields greater returns\\
+    %     %     than complex agentic workflows for Vietnamese legal domain
+    %     % }
+    % }
+    % \end{center}
 \end{frame}
 
 % ========================================
 % SLIDE 16: CONCLUSION
 % ========================================
 \begin{frame}{Conclusion}
-    \begin{center}
-        \Large\textbf{ViLeXa} - Vietnamese Legal eXpert Assistant
-    \end{center}
+    \vspace{0.2cm}
     
-    \vspace{0.25cm}
-    \begin{columns}[c]
-        \begin{column}{0.48\textwidth}
-            \begin{center}
-            \textbf{Technical Contributions}
-            \end{center}
-            \begin{enumerate}
-                \item Hierarchical chunking preserving legal structure
-                \item Systematic embedding evaluation (+33\% improvement)
-                \item Self-reflective RAG with LangGraph
-            \end{enumerate}
-        \end{column}
-        
-        \begin{column}{0.48\textwidth}
-            \begin{center}
-            \textbf{Practical Outcomes}
-            \end{center}
-            \begin{enumerate}
-                \item End-to-end legal QA system
-                \item Evidence-based configuration
-                \item 96\% low-hallucination responses
-            \end{enumerate}
-        \end{column}
-    \end{columns}
+    % Insight 1: Embeddings
+    \begin{block}{\textbf{1. Domain Specificity Over General Complexity}}
+        Experiments confirm that \textbf{fine-tuned dense embeddings} (Vietnamese-Embedding-v2) significantly outperform complex multilingual hybrid architectures for the Vietnamese legal domain.
+    \end{block}
     
-    \vspace{0.4cm}
-    \begin{center}
-    \begin{tikzpicture}
-        \node[rectangle, draw=best, fill=best!15, rounded corners, minimum width=10cm, minimum height=1.1cm] {
-            \begin{tabular}{cccc}
-                \textbf{Hit@1} & \textbf{Relevancy} & \textbf{Faithfulness} & \textbf{Latency} \\
-                77.3\% & 0.818 & 0.913 & 3.05s
-            \end{tabular}
-        };
-    \end{tikzpicture}
-    \end{center}
+    \vspace{0.2cm}
+    
+    % Insight 2: Architecture
+    \begin{block}{\textbf{2. The Trade-off: Efficiency vs. Adaptability}}
+        \begin{itemize}
+            \item \textbf{Traditional RAG:} Superior speed and raw metrics (Relevancy 0.818).
+            \item \textbf{Self-Reflective RAG:} Essential for "human-like" robustness (handling chit-chat, ambiguity), despite the latency cost.
+        \end{itemize}
+    \end{block}
+    
+    \vspace{0.2cm}
+    
+    % Final Summary
+    {\textbf{Final Verdict:}}
+        ViLeXa demonstrates that the future of autonomous legal assistants lies in a hybrid approach: combining \textbf{high-speed, domain-specific retrieval} with the \textbf{adaptive reasoning} of agentic workflows.
+    
 \end{frame}
 
 % ========================================

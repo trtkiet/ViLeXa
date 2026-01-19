@@ -1,6 +1,6 @@
 """Session service for chat session management."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any
 import uuid
 
@@ -9,6 +9,11 @@ from sqlalchemy.orm import Session
 from db.models.chat_session import ChatSession
 from db.models.message import Message
 from db.models.message_source import MessageSource
+
+
+def utc_now() -> datetime:
+    """Return current UTC time with timezone info."""
+    return datetime.now(timezone.utc)
 
 
 class SessionService:
@@ -123,7 +128,7 @@ class SessionService:
             return None
 
         session.title = title
-        session.updated_at = datetime.utcnow()
+        session.updated_at = utc_now()
         db.commit()
         db.refresh(session)
         return session
@@ -239,7 +244,7 @@ class SessionService:
         """Update a session's updated_at timestamp."""
         session = db.query(ChatSession).filter(ChatSession.id == session_id).first()
         if session:
-            session.updated_at = datetime.utcnow()
+            session.updated_at = utc_now()
             db.commit()
 
     def auto_title_session(

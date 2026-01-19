@@ -1,6 +1,6 @@
 """Message database model."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, List
 
 from sqlalchemy import String, DateTime, ForeignKey, Text
@@ -11,6 +11,11 @@ from db.base import Base
 if TYPE_CHECKING:
     from db.models.chat_session import ChatSession
     from db.models.message_source import MessageSource
+
+
+def utc_now() -> datetime:
+    """Return current UTC time with timezone info."""
+    return datetime.now(timezone.utc)
 
 
 class Message(Base):
@@ -27,7 +32,7 @@ class Message(Base):
     role: Mapped[str] = mapped_column(String(20), nullable=False)  # 'user' or 'ai'
     content: Mapped[str] = mapped_column(Text, nullable=False)
     timestamp: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow
+        DateTime(timezone=True), default=utc_now
     )
 
     # Relationships
