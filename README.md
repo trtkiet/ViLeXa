@@ -35,7 +35,9 @@ The result is a system that achieved **77.3% Hit Rate@1** and **95.0% Recall@10*
 
 ## Screenshots
 
-<!-- TODO: Add screenshots after demo recording -->
+**Product UI** — *coming soon* (see TODOs below):
+
+<!-- TODO: Add product screenshots after demo recording -->
 
 | Chat Interface | Document Lookup | Evaluation Dashboard |
 |---|---|---|
@@ -66,89 +68,31 @@ The result is a system that achieved **77.3% Hit Rate@1** and **95.0% Recall@10*
 
 ### System Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                          React Frontend (Vite)                          │
-│                  Chat UI · Document Browser · Auth Flow                 │
-└───────────────────────────────┬─────────────────────────────────────────┘
-                                │ HTTP / REST API
-                                ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│                        FastAPI Backend (Python)                         │
-│                                                                         │
-│   ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────────────┐  │
-│   │   Auth   │  │   Chat   │  │ Sessions │  │   Document Lookup    │  │
-│   │  (JWT)   │  │  (RAG)   │  │  (CRUD)  │  │  (Browse / Search)   │  │
-│   └────┬─────┘  └────┬─────┘  └────┬─────┘  └──────────┬───────────┘  │
-│        │              │              │                    │              │
-│        ▼              ▼              ▼                    ▼              │
-│   ┌──────────┐  ┌──────────┐  ┌──────────┐       ┌──────────┐         │
-│   │  SQLite  │  │ LangGraph│  │  SQLite  │       │  File    │         │
-│   │  (Auth)  │  │  Agentic │  │ (Sessions│       │  System  │         │
-│   │          │  │  Pipeline│  │  & Msgs) │       │  (JSON)  │         │
-│   └──────────┘  └────┬─────┘  └──────────┘       └──────────┘         │
-│                       │                                                │
-│              ┌────────┴────────┐                                       │
-│              ▼                 ▼                                       │
-│       ┌──────────┐     ┌──────────┐                                   │
-│       │  Qdrant  │     │  Google  │                                   │
-│       │ (Hybrid  │     │  Gemini  │                                   │
-│       │ Vectors) │     │   LLM    │                                   │
-│       └──────────┘     └──────────┘                                   │
-└─────────────────────────────────────────────────────────────────────────┘
-```
+<p align="center">
+  <img src="docs/screenshots/architecture.png" alt="ViLeXa System Architecture" width="100%" />
+</p>
+
+<p align="center">
+  <em>Generated with <a href="https://github.com/tt-a1i/archify">Archify</a> — open the live <a href="docs/vilexa-architecture.html">interactive diagram</a> for focus modes, zoom, and guided story views.</em>
+</p>
 
 ### Agentic RAG Pipeline
 
 The core innovation is a multi-step agentic LangGraph state machine that routes, retrieves, evaluates, and adapts:
 
-```
-                         ┌────────────────┐
-                         │   User Query   │
-                         └───────┬────────┘
-                                 │
-                         ┌───────▼────────┐
-                         │  route_query   │  LLM classifies: does this need
-                         │  (Classifier)  │  legal document retrieval?
-                         └───────┬────────┘
-                          ┌──────┴──────┐
-                         YES            NO
-                          │              │
-                 ┌────────▼────────┐    │
-                 │    retrieve     │    │
-                 │ (Qdrant Hybrid  │    │
-                 │  + Reranker)    │    │
-                 └────────┬────────┘    │
-                          │             │
-                 ┌────────▼────────┐   │
-                 │ grade_documents │   │  LLM evaluates each
-                 │ (Relevance)     │   │  document's relevance
-                 └────────┬────────┘   │
-                          │            │
-              ┌───────────┼───────────┐│
-             YES          NO      MAX RETRIES
-              │            │            │
-   ┌──────────▼──┐  ┌──────▼──────┐   │
-   │  generate   │  │   rewrite   │   │
-   │ _with_ctx   │  │   _query    │   │  Reformulates query,
-   │(Grounded)   │  │  (Adaptive) │   │  loops back to retrieve
-   └──────────┬──┘  └──────┬──────┘   │
-              │             │          │
-              │      ┌──────▼──────┐   │
-              │      │  retrieve   │───┘  (max 3 attempts)
-              │      │  (retry)    │
-              │      └─────────────┘
-              │                       │
-              │              ┌────────▼────────┐
-              │              │  handle_no_docs  │  Graceful fallback
-              │              │  (Suggestion)    │
-              │              └────────┬────────┘
-              │                       │
-              ▼                       ▼
-   ┌─────────────────────────────────────────┐
-   │            Final Response               │
-   │   Answer + Legal Citations + Sources    │
-   └─────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    Q[User Query] --> R{route_query}
+    R -->|needs retrieval| RET[retrieve]
+    R -->|no retrieval| GD[generate_direct]
+    RET --> GRADE{grade_documents}
+    GRADE -->|relevant| GEN[generate_with_context]
+    GRADE -->|no relevant, < max| RW[rewrite_query]
+    RW --> RET
+    GRADE -->|no relevant, max reached| HND[handle_no_docs]
+    GD --> END[Final Response]
+    GEN --> END
+    HND --> END
 ```
 
 ### State Flow
@@ -612,26 +556,11 @@ The `law_crawler/` module scrapes legal documents from the [Vietnamese National 
 
 ### Preprocessing Pipeline
 
-```
-Raw JSON (from vbpl.vn)
-    │
-    ▼
-┌──────────────────┐
-│  VietLegalChunker │  Parse hierarchy, extract articles
-│  (chunker.py)     │  Split large articles (>512 tokens)
-└────────┬─────────┘
-         │
-         ▼
-┌──────────────────┐
-│  Embedding Engine │  Dense + Sparse vectors
-│  (BGE-M3 based)   │  1024-dim dense, variable sparse
-└────────┬─────────┘
-         │
-         ▼
-┌──────────────────┐
-│  Qdrant Ingestion │  Create collection with hybrid config
-│  (ingest_*.py)    │  Batch upload with progress tracking
-└──────────────────┘
+```mermaid
+flowchart TD
+    JSON[Raw JSON from vbpl.vn] --> CH[VietLegalChunker<br/>Parse hierarchy, extract articles,<br/>split >512 token articles]
+    CH --> EMB[Embedding Engine<br/>BGE-M3: 1024-dim dense + sparse]
+    EMB --> QD[Qdrant Ingestion<br/>Hybrid collection config,<br/>batch upload with progress tracking]
 ```
 
 ---
