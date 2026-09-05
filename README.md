@@ -35,13 +35,11 @@ The result is a system that achieved **77.3% Hit Rate@1** and **95.0% Recall@10*
 
 ## Screenshots
 
-**Product UI** — *coming soon* (see TODOs below):
+**Live product UI** — captured from the running ViLeXa application.
 
-<!-- TODO: Add product screenshots after demo recording -->
-
-| Chat Interface | Document Lookup | Evaluation Dashboard |
-|---|---|---|
-| ![Chat](docs/screenshots/chat.png) | ![Lookup](docs/screenshots/lookup.png) | ![Eval](docs/screenshots/evaluation.png) |
+| Chat Interface | Document Lookup |
+|---|---|
+| ![Chat](docs/screenshots/chat.png) | ![Lookup](docs/screenshots/lookup.png) |
 
 ---
 
