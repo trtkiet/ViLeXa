@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "ViLeXa — Agentic RAG Architecture",
+    "output": "vilexa-architecture.html",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    { "id": "user", "type": "external", "label": "User", "sublabel": "Legal Query", "pos": [30, 100], "size": [90, 42] },
+    { "id": "react", "type": "frontend", "label": "React Frontend", "sublabel": "TS · Vite", "pos": [200, 100], "size": [120, 46] },
+    { "id": "fastapi", "type": "backend", "label": "FastAPI", "sublabel": "Python · Auth", "pos": [400, 100], "size": [110, 46] },
+    { "id": "langgraph", "type": "backend", "label": "LangGraph", "sublabel": "7-Node RAG", "pos": [600, 100], "size": [120, 50], "tag": "Agentic Pipeline" },
+    { "id": "gemini", "type": "cloud", "label": "Gemini", "sublabel": "flash-lite", "pos": [800, 100], "size": [100, 42] },
+    { "id": "qdrant", "type": "database", "label": "Qdrant", "sublabel": "Hybrid Search", "pos": [600, 260], "size": [120, 42] },
+    { "id": "reranker", "type": "backend", "label": "Reranker", "sublabel": "Cross-Encoder", "pos": [800, 260], "size": [110, 42] },
+    { "id": "sqlite", "type": "database", "label": "SQLite", "sublabel": "ORM", "pos": [400, 260], "size": [100, 42] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "RAG Engine", "wraps": ["langgraph", "qdrant", "reranker"] }
+  ],
+  "connections": [
+    { "id": "c1", "from": "user", "to": "react", "label": "Query", "variant": "emphasis", "fromSide": "right", "toSide": "left" },
+    { "id": "c2", "from": "react", "to": "fastapi", "label": "REST", "variant": "emphasis", "fromSide": "right", "toSide": "left" },
+    { "id": "c3", "from": "fastapi", "to": "langgraph", "label": "Invoke", "fromSide": "right", "toSide": "left" },
+    { "id": "c4", "from": "langgraph", "to": "gemini", "label": "LLM", "fromSide": "right", "toSide": "left" },
+    { "id": "c5", "from": "langgraph", "to": "qdrant", "label": "Search", "fromSide": "bottom", "toSide": "top", "labelAt": [665, 235] },
+    { "id": "c6", "from": "qdrant", "to": "reranker", "label": "Top-k", "fromSide": "right", "toSide": "left" },
+    { "id": "c7", "from": "reranker", "to": "langgraph", "label": "Reranked", "variant": "dashed", "fromSide": "top", "toSide": "bottom" },
+    { "id": "c8", "from": "fastapi", "to": "sqlite", "label": "ORM", "fromSide": "bottom", "toSide": "top" }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Agentic RAG",
+      "items": ["7-node LangGraph pipeline", "Dynamic query routing", "Progressive filter relaxation", "Document relevance grading"]
+    },
+    {
+      "dot": "cyan",
+      "title": "Hybrid Search",
+      "items": ["Dense: Vietnamese_Embedding_v2", "Sparse: BGE-M3 lexical weights", "Reciprocal Rank Fusion", "Cross-encoder reranking"]
+    },
+    {
+      "dot": "violet",
+      "title": "Legal NLP",
+      "items": ["Hierarchical chunking", "vbpl.vn crawler", "82.7% Hit Rate@1", "BGE-M3 multilingual"]
+    },
+    {
+      "dot": "rose",
+      "title": "Production",
+      "items": ["JWT auth + sessions", "Docker + NVIDIA GPU", "DeepEval evaluation", "SQLite for user data"]
+    }
+  ]
+}
